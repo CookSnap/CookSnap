@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { riskFor } from "@/lib/risk";
 import { createSupabaseRouteClient, requireUserId } from "@/lib/supabase";
 import type { Item } from "@/types";
@@ -16,14 +17,11 @@ async function resolveHouseholdId(supabase: Awaited<ReturnType<typeof createSupa
     return membership.household_id;
   }
 
-  const { data: household, error: householdError } = await supabase
-    .from("households")
-    .insert({ name: "CookSnap household" })
-    .select("id")
-    .single();
+  const newHouseholdId = randomUUID();
+  const { error: householdError } = await supabase.from("households").insert({ id: newHouseholdId, name: "CookSnap household" });
 
-  if (householdError || !household) {
-    if (householdError && householdError.code === "42501") {
+  if (householdError) {
+    if (householdError.code === "42501") {
       throw new Error(
         "Household setup is blocked by RLS. Run docs/supabase.sql in your Supabase project (or allow inserts on public.households) before adding items."
       );
@@ -36,7 +34,7 @@ async function resolveHouseholdId(supabase: Awaited<ReturnType<typeof createSupa
   }
 
   const { error: membershipError } = await supabase.from("household_members").insert({
-    household_id: household.id,
+    household_id: newHouseholdId,
     user_id: userId,
   });
 
@@ -44,7 +42,7 @@ async function resolveHouseholdId(supabase: Awaited<ReturnType<typeof createSupa
     throw membershipError;
   }
 
-  return household.id;
+  return newHouseholdId;
 }
 
 export async function GET() {

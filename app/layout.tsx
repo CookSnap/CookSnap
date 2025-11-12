@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -10,6 +11,13 @@ const inter = Inter({ subsets: ["latin"], display: "swap" });
 export const metadata: Metadata = {
   title: "CookSnap",
   description: "Effortless power for every pantry.",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", sizes: "any" },
+      { url: "/favicon.svg", rel: "shortcut icon" },
+    ],
+    apple: "/favicon.svg",
+  },
 };
 
 const themeScript = `
@@ -37,10 +45,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="relative min-h-screen bg-[rgb(var(--background))] text-[rgb(var(--foreground))]">
         <header className="sticky top-0 z-50 border-b border-[rgb(var(--border))]/70 bg-[rgb(var(--background))]/80 backdrop-blur">
           <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-            <Link href="/" className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.3em] text-[rgb(var(--muted-foreground))] dark:text-white/80">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-emerald-500 shadow-sm dark:bg-[rgb(var(--accent))]/15 dark:text-white">
-                🌿
-              </span>
+            <Link href="/" className="flex items-center gap-4 text-base font-semibold uppercase tracking-[0.35em] text-[rgb(var(--muted-foreground))] dark:text-white/80 md:text-lg">
+              <Image src="/favicon.svg" alt="CookSnap logo" width={60} height={60} priority className="bg-[rgb(var(--background))] shadow-md" />
               CookSnap
             </Link>
             <div className="flex items-center gap-2 text-sm">
@@ -53,10 +59,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link className="rounded-full px-4 py-2 text-[rgb(var(--foreground))] transition hover:bg-[rgb(var(--accent))]/20 dark:text-white/90" href="/recipes">
                 Recipes
               </Link>
+              <Link className="rounded-full px-4 py-2 text-[rgb(var(--foreground))] transition hover:bg-[rgb(var(--accent))]/20 dark:text-white/90" href="/shopping_list">
+                Shopping list
+              </Link>
               {displayName ? (
-                <span className="hidden rounded-full bg-[rgb(var(--accent))]/20 px-4 py-2 text-xs font-semibold text-[rgb(var(--foreground))] dark:bg-[rgb(var(--accent))]/35 dark:text-white md:inline-flex">
+                <Link
+                  href="/profile"
+                  className="hidden rounded-full bg-[rgb(var(--accent))]/20 px-4 py-2 text-xs font-semibold text-[rgb(var(--foreground))] transition hover:bg-[rgb(var(--accent))]/30 dark:bg-[rgb(var(--accent))]/35 dark:text-white md:inline-flex"
+                >
                   Hey, {displayName.split(" ")[0]}
-                </span>
+                </Link>
               ) : (
                 <Link className="rounded-full px-4 py-2 text-[rgb(var(--foreground))] transition hover:bg-[rgb(var(--accent))]/20 dark:text-white/90" href="/login">
                   Sign in

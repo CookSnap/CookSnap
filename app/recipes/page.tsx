@@ -17,16 +17,17 @@ async function loadContext() {
 
     const householdId = membership?.household_id ?? null;
 
-    const { data: items = [] } = await supabase
-      .from("items")
-      .select("*")
-      .eq("household_id", householdId);
+    let items: Item[] = [];
+    if (householdId) {
+      const { data: householdItems } = await supabase.from("items").select("*").eq("household_id", householdId);
+      items = (householdItems ?? []) as Item[];
+    }
 
     const { data: dbRecipes = [] } = await supabase.from("recipes").select("*").order("time_min", { ascending: true });
 
     const recipes: Recipe[] = dbRecipes.length ? (dbRecipes as Recipe[]) : (baseRecipes as Recipe[]);
 
-    return { items: items as Item[], recipes };
+    return { items, recipes };
   } catch (error) {
     return { error: (error as Error).message };
   }

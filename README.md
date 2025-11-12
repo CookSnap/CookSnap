@@ -1,6 +1,6 @@
-# CookSnap · Alpha v0.1
+# CookSnap · Alpha v0.2
 
-CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes, OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. This Alpha v0.1 README walks through the exact setup from a blank machine, outlines current features, what’s coming next, and how the stack fits together.
+CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes, OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. Alpha v0.2 adds a household shopping list workspace, richer pantry groupings, a profile hub, and refreshed branding. This README walks through the setup, current features, what’s coming next, and how the stack fits together.
 
 ## Installation & Setup (from zero)
 1. **Clone the repository**
@@ -46,35 +46,36 @@ CookSnap is a full-stack pantry ops platform built with Next.js App Router + Sup
    - `npm run typecheck` → TypeScript `--noEmit`
    - `npm run build` → Production build smoke test
 
-Once those steps are complete, CookSnap Alpha v0.1 is fully operational locally.
+Once those steps are complete, CookSnap Alpha v0.2 is fully operational locally.
 
-## Implemented Features (Alpha v0.1)
-- **Supabase-authenticated households**: Users sign in via Google OAuth, and the API auto-creates a household + membership with safe RLS defaults.
+## Implemented Features (Alpha v0.2)
+- **Supabase-authenticated households**: Users sign in via Google OAuth, and the API auto-creates a household + membership with safe RLS defaults (now resilient to RLS-returning errors thanks to UUID pre-generation).
 - **Three add flows**:
   - *Barcode scanning* (placeholder UI wired to ZXing WASM entry points).
   - *Receipt OCR* (placeholder UI referencing Tesseract.js pipeline).
   - *Manual entry* (fully working form hitting `/api/items`).
-- **Pantry dashboard**:
+- **Pantry dashboard + revamped pantry view**:
   - Summary cards for inventory size, high-risk count, last event timestamp.
-  - “Use-it-now” recipe recommendations using `data/recipes.json` as fallback.
-  - Recent activity feed (hooked to Supabase `events` table).
-- **Pantry view**:
-  - Household-level list, risk badge display, handy “Mark used” placeholder controls.
+  - New Pantry grouping UI (Pantry / Fridge / Freezer) with Safe / Use-now / Risky clusters, relative timestamps, and richer risk badges.
+- **Shopping list workspace (/shopping_list)**:
+  - Auto-generated ingredient gaps per recipe with recipe context tags.
+  - Manual reminder list with local persistence, completion toggles, and downloadable `.txt` export.
 - **Recipes view**:
-  - Client-side filters (tags/diet/time) with fallback to bundled recipes when the DB table is empty.
-- **Thanks page & nav integration**:
-  - Post-login acknowledgment plus quick links.
+  - Client-side filters (tags/diet/time) with fallback to bundled recipes, and safer loading when no household membership exists.
+- **Profile hub (/profile)**:
+  - Update first/last name via Supabase metadata and log out from the same page; header “Hey, {name}” links directly here.
+- **Navigation & branding refresh**:
+  - Logo + favicon swap to the new SVG, expanded nav pill for Shopping List, responsive typography tweaks.
 - **API routes**:
-  - `/api/items` handles CRUD with household bootstrap + risk recalculation.
+  - `/api/items` handles CRUD with household bootstrap + risk recalculation (now pre-generates UUIDs to dodge RLS RETURNING failures).
   - `/api/track` stores events for analytics.
 - **Theme system**:
-  - Light/dark palettes with persisted preference and accessible toggle.
+  - Light/dark palettes with persisted preference and accessible toggle; header logo background now follows theme variables.
 
 ## Planned / Upcoming Features
-- **Shopping lists & grocery mode**: tie pantry depletion to a shareable shopping list (Supabase tables + UI).
 - **Real barcode lookups**: integrate ZXing scanning + UPC databases to auto-fill item metadata.
 - **Receipt OCR confirm table**: connect the `ReceiptAdd` placeholder to a real Tesseract.js pipeline with multi-row confirmation UI.
-- **Household invites**: allow multiple Supabase users per household, plus Role management.
+- **Household invites**: allow multiple Supabase users per household, plus role management.
 - **Event analytics**: charts for add/use trends, expiring items, and notification hooks.
 - **Mobile scanner shell**: PWA tweaks for camera permissions and offline caching.
 - **Shopping trip planner**: pre-built “use these risky items” plan with recipe suggestions.
