@@ -55,7 +55,7 @@ Use the SQL in `docs/supabase.sql` (also included in the handoff) to create tabl
 
 ## Key files & directories
 - `app/` — Next.js App Router tree.
-  - `app/layout.tsx` wires global fonts, theme script, and header navigation with Supabase-aware greeting.
+  - `app/layout.tsx` wires fonts, theme script, and header navigation with Supabase-aware greeting.
   - `app/page.tsx` renders the dashboard, fetching pantry items, events, and recipe recommendations via the server Supabase client.
   - `app/login/page.tsx` launches Google OAuth using the browser Supabase client.
   - `app/add/page.tsx` hosts the barcode/receipt/manual add tabs.
@@ -63,11 +63,11 @@ Use the SQL in `docs/supabase.sql` (also included in the handoff) to create tabl
   - `app/api/items/route.ts` and `app/api/track/route.ts` are serverless APIs for CRUD + activity tracking.
 - `components/` — UI primitives and feature widgets (AddManual form, barcode scanner, recipe cards, etc.).
 - `data/recipes.json` — default recipe catalog used when the Supabase table is empty.
-- `docs/supabase.sql` — single source of truth for schema, RLS policies, helper functions, and seed data.
+- `docs/supabase.sql` — schema, RLS policies, helper functions, and seed data.
 - `lib/supabase.ts` — async server/route Supabase client factory plus `requireUserId` guard.
 - `lib/supabase-browser.ts` — browser Supabase client helper for OAuth flows.
-- `lib/utils.ts` & other helpers — formatting utilities, analytics trackers, risk calculations.
-- `public/` — static assets (favicons, logos) consumed by the App Router.
+- `lib/utils.ts` & helpers — formatting utilities, analytics trackers, risk calculations.
+- `public/` — static assets consumed by the App Router.
 - `styles/` & `tailwind.config.ts` — Tailwind theme tokens and global CSS.
 - `types/` — shared TypeScript contracts (items, recipes, events).
 - `package.json`, `tsconfig.json`, `.biome.json` — tooling configuration for scripts, TypeScript, and linting.

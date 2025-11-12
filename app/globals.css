@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+:root.light {
+  --background: 245 247 250;
+  --foreground: 26 32 44;
+  --accent: 34 197 94;
+  --border: 221 226 236;
+  --muted-foreground: 109 120 133;
+}
+
+:root.dark {
+  --background: 14 18 28;
+  --foreground: 239 244 255;
+  --accent: 56 189 248;
+  --border: 42 53 74;
+  --muted-foreground: 161 174 199;
+}
+
+body {
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--accent)) transparent;
+}

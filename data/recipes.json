@@ -1,0 +1,24 @@
+[
+  {
+    "id": "ffc63058-73a2-44cf-a5b7-1ae7252e99aa",
+    "title": "Use-It-Now Meal Pack",
+    "time_min": 25,
+    "diet": "omnivore",
+    "tags": ["use-it-now", "weeknight"],
+    "ingredients": [
+      { "name": "Baby Spinach", "qty": 4, "unit": "oz" },
+      { "name": "Black Beans", "qty": 1, "unit": "can" }
+    ]
+  },
+  {
+    "id": "7cb51cee-9c6e-40d3-8e3c-1a3240cb83fd",
+    "title": "Power Spinach Frittata",
+    "time_min": 20,
+    "diet": "vegetarian",
+    "tags": ["breakfast", "use-it-now"],
+    "ingredients": [
+      { "name": "Eggs", "qty": 6, "unit": "ea" },
+      { "name": "Baby Spinach", "qty": 3, "unit": "cup" }
+    ]
+  }
+]
