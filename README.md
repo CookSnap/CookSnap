@@ -1,9 +1,9 @@
 <h1 align="left">
   <img src="./public/favicon.svg" alt="CookSnap logo" width="100" height="100" style="vertical-align:middle;margin-right:12px;" />
-  CookSnap · Alpha v0.3
+  CookSnap · Alpha v0.4
 </h1>
 
-CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes, OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. Alpha v0.3 adds a household shopping list workspace, richer pantry groupings, a profile hub, refreshed branding, and tighter chat-ready copy throughout this README. This guide walks through the setup, current features, what’s coming next, and how the stack fits together.
+CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes, OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. Alpha v0.4 layers in real UPC lookups with the browser `BarcodeDetector` API, item-level metadata caching (including product thumbnails), and a `/pantry/{itemId}` detail route with edit/delete controls. This guide walks through the setup, current features, what’s coming next, and how the stack fits together.
 
 ## Installation & Setup (from zero)
 1. **Clone the repository**
@@ -49,17 +49,21 @@ CookSnap is a full-stack pantry ops platform built with Next.js App Router + Sup
    - `npm run typecheck` → TypeScript `--noEmit`
    - `npm run build` → Production build smoke test
 
-Once those steps are complete, CookSnap Alpha v0.3 is fully operational locally.
+Once those steps are complete, CookSnap Alpha v0.4 is fully operational locally.
 
-## Implemented Features (Alpha v0.3)
+## Implemented Features (Alpha v0.4)
 - **Supabase-authenticated households**: Users sign in via Google OAuth, and the API auto-creates a household + membership with safe RLS defaults (now resilient to RLS-returning errors thanks to UUID pre-generation).
 - **Three add flows**:
-  - *Barcode scanning* (placeholder UI wired to ZXing WASM entry points).
+  - *Barcode scanning* powered by the native `BarcodeDetector` API (with ZXing-compatible fallbacks ready to slot in) plus Open Food Facts lookups.
   - *Receipt OCR* (placeholder UI referencing Tesseract.js pipeline).
   - *Manual entry* (fully working form hitting `/api/items`).
 - **Pantry dashboard + revamped pantry view**:
   - Summary cards for inventory size, high-risk count, last event timestamp.
-  - New Pantry grouping UI (Pantry / Fridge / Freezer) with Safe / Use-now / Risky clusters, relative timestamps, and richer risk badges.
+  - New Pantry grouping UI (Pantry / Fridge / Freezer) with Safe / Use-now / Risky clusters, relative timestamps, richer risk badges, UPC thumbnails, and deep-links to `/pantry/{itemId}` editors.
+- **Item-level detail route (`/pantry/[id]`)**:
+  - Inline editor for quantity/unit/category/storage/opened state.
+  - Delete action with redirect back to the pantry grid.
+  - Upstream UPC metadata surface (brand, package info, categories, raw payload) plus product imagery when available.
 - **Shopping list workspace (/shopping_list)**:
   - Auto-generated ingredient gaps per recipe with recipe context tags.
   - Manual reminder list with local persistence, completion toggles, and downloadable `.txt` export.
@@ -70,13 +74,15 @@ Once those steps are complete, CookSnap Alpha v0.3 is fully operational locally.
 - **Navigation & branding refresh**:
   - Logo + favicon swap to the new SVG, expanded nav pill for Shopping List, responsive typography tweaks.
 - **API routes**:
-  - `/api/items` handles CRUD with household bootstrap + risk recalculation (now pre-generates UUIDs to dodge RLS RETURNING failures).
+  - `/api/items` handles CRUD with household bootstrap + risk recalculation (now pre-generates UUIDs to dodge RLS RETURNING failures) and persists UPC metadata/image references for each item.
   - `/api/track` stores events for analytics.
+- **Barcode metadata cache**:
+  - `/api/barcode` resolves UPC/EAN codes via Open Food Facts, caches responses in Supabase, and falls back gracefully when the cache table is missing.
 - **Theme system**:
   - Light/dark palettes with persisted preference and accessible toggle; header logo background now follows theme variables.
 
 ## Planned / Upcoming Features
-- **Real barcode lookups**: integrate ZXing scanning + UPC databases to auto-fill item metadata.
+- **ZXing fallback + offline cache**: add a WASM-based decoder for browsers without `BarcodeDetector`, and sync UPC cache entries to the client for offline scans.
 - **Receipt OCR confirm table**: connect the `ReceiptAdd` placeholder to a real Tesseract.js pipeline with multi-row confirmation UI.
 - **Household invites**: allow multiple Supabase users per household, plus role management.
 - **Event analytics**: charts for add/use trends, expiring items, and notification hooks.
@@ -126,4 +132,4 @@ biome.json          Lint/format rules
 README.md           You are here
 ```
 
-CookSnap Alpha v0.3 is stable enough for local demos; future milestones will layer in the planned shopping, notifications, and richer automation features. Contributions and issue reports are welcome—open a PR or drop feedback in the repo.
+CookSnap Alpha v0.4 is stable enough for local demos; future milestones will layer in collaboration, analytics, and the enhanced automation features listed above. Contributions and issue reports are welcome—open a PR or drop feedback in the repo.
