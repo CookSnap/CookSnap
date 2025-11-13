@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,6 +69,8 @@ export function BarcodeAdd() {
     await runLookup(cleanedValue);
   };
 
+  const barcodeInputId = useId();
+
   const tags = useMemo(() => {
     if (!result?.product?.categories?.length) return [] as string[];
     return result.product.categories
@@ -81,7 +83,10 @@ export function BarcodeAdd() {
     let cancelled = false;
 
     const stopStream = () => {
-      streamRef.current?.getTracks().forEach((track) => track.stop());
+      const tracks = streamRef.current?.getTracks() ?? [];
+      for (const track of tracks) {
+        track.stop();
+      }
       streamRef.current = null;
       if (videoRef.current) {
         videoRef.current.srcObject = null;
@@ -106,7 +111,9 @@ export function BarcodeAdd() {
           audio: false,
         });
         if (cancelled) {
-          nextStream.getTracks().forEach((track) => track.stop());
+          for (const track of nextStream.getTracks()) {
+            track.stop();
+          }
           return;
         }
         streamRef.current = nextStream;
@@ -290,10 +297,10 @@ export function BarcodeAdd() {
 
       <form className="space-y-3" onSubmit={handleLookup}>
         <div className="grid gap-2">
-          <Label htmlFor="barcode">UPC / EAN digits</Label>
+          <Label htmlFor={barcodeInputId}>UPC / EAN digits</Label>
           <div className="flex gap-2">
             <Input
-              id="barcode"
+              id={barcodeInputId}
               inputMode="numeric"
               pattern="[0-9]*"
               placeholder={UPC_PLACEHOLDER}

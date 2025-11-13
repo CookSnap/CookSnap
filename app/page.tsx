@@ -123,7 +123,7 @@ export default async function HomePage() {
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             {recommended.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
+              <RecipeCard key={recipe.id} recipe={recipe} pantryItems={items} />
             ))}
           </CardContent>
         </Card>

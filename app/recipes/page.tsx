@@ -4,6 +4,7 @@ import baseRecipes from "@/data/recipes.json";
 import { createSupabaseServerClient, requireUserId } from "@/lib/supabase";
 import type { Item, Recipe } from "@/types";
 import { RecipesClient } from "@/components/RecipesClient";
+import { getRandomOpenRecipes, getBestPantryMatches, getUseNowRecipes } from "@/lib/open-recipes";
 
 async function loadContext() {
   const supabase = await createSupabaseServerClient();
@@ -25,9 +26,17 @@ async function loadContext() {
 
     const { data: dbRecipes = [] } = await supabase.from("recipes").select("*").order("time_min", { ascending: true });
 
-    const recipes: Recipe[] = dbRecipes.length ? (dbRecipes as Recipe[]) : (baseRecipes as Recipe[]);
+    const featured = await getRandomOpenRecipes(10);
+    const pantryMatches = await getBestPantryMatches(items, 4);
+    const useNow = await getUseNowRecipes(items, 4);
+    const datasetAvailable = featured.length > 0;
 
-    return { items, recipes };
+    const fallbackRecipes: Recipe[] = dbRecipes.length ? (dbRecipes as Recipe[]) : (baseRecipes as Recipe[]);
+    const displayFeatured = datasetAvailable ? featured : fallbackRecipes.slice(0, 10);
+    const displayPantryMatches = datasetAvailable ? pantryMatches : [];
+    const displayUseNow = datasetAvailable ? useNow : [];
+
+    return { items, featured: displayFeatured, pantryMatches: displayPantryMatches, useNow: displayUseNow, fallbackRecipes, datasetAvailable };
   } catch (error) {
     return { error: (error as Error).message };
   }
@@ -50,17 +59,24 @@ export default async function RecipesPage() {
     );
   }
 
-  const { items, recipes } = context;
+  const { items, featured, pantryMatches, useNow, fallbackRecipes, datasetAvailable } = context;
 
   return (
     <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="text-3xl font-semibold">Use-it-now recipes</h1>
         <p className="text-sm text-[rgb(var(--muted-foreground))]">
-          Sorted by how much near-expiry inventory they rescue. Dial in diet, tags, and cook time without leaving the page.
+          Sorted by how much near-expiry inventory they rescue. Dial in diet, tags, cook time, or search for anything in your cravings list.
         </p>
       </header>
-      <RecipesClient items={items} recipes={recipes} />
+      <RecipesClient
+        items={items}
+        featured={featured}
+        pantryMatches={pantryMatches}
+        useNow={useNow}
+        fallbackRecipes={fallbackRecipes}
+        datasetAvailable={datasetAvailable}
+      />
     </div>
   );
 }

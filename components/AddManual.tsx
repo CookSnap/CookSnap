@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,25 +66,30 @@ export function AddManual({ onAdded }: AddManualProps) {
     }
   };
 
+  const nameId = useId();
+  const qtyId = useId();
+  const unitId = useId();
+  const categoryId = useId();
+
   return (
     <form className="grid gap-4" onSubmit={handleSubmit}>
       <div className="grid gap-2">
-        <Label htmlFor="name">Item name</Label>
-        <Input id="name" required value={form.name} onChange={(event) => handleChange("name", event.target.value)} placeholder="Shelf-stable almond milk" />
+        <Label htmlFor={nameId}>Item name</Label>
+        <Input id={nameId} required value={form.name} onChange={(event) => handleChange("name", event.target.value)} placeholder="Shelf-stable almond milk" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-2">
-          <Label htmlFor="qty">Quantity</Label>
-          <Input id="qty" type="number" min="0" step="0.1" value={form.qty} onChange={(event) => handleChange("qty", event.target.value)} />
+          <Label htmlFor={qtyId}>Quantity</Label>
+          <Input id={qtyId} type="number" min="0" step="0.1" value={form.qty} onChange={(event) => handleChange("qty", event.target.value)} />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="unit">Unit</Label>
-          <Input id="unit" value={form.unit} onChange={(event) => handleChange("unit", event.target.value)} placeholder="bottle, ct, g" />
+          <Label htmlFor={unitId}>Unit</Label>
+          <Input id={unitId} value={form.unit} onChange={(event) => handleChange("unit", event.target.value)} placeholder="bottle, ct, g" />
         </div>
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="category">Category</Label>
-        <Input id="category" value={form.category} onChange={(event) => handleChange("category", event.target.value)} placeholder="Pantry, Produce, Dairy" />
+        <Label htmlFor={categoryId}>Category</Label>
+        <Input id={categoryId} value={form.category} onChange={(event) => handleChange("category", event.target.value)} placeholder="Pantry, Produce, Dairy" />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="storage">Storage</Label>

@@ -9,10 +9,11 @@ const supabaseAnonKey =
 
 type Database = Record<string, never>;
 
-function assertEnv(variable: string | undefined, name: string) {
+function requireEnv(variable: string | undefined, name: string): string {
   if (!variable) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
+  return variable;
 }
 
 const buildCookieAdapter = (store: RequestCookies) => ({
@@ -36,10 +37,10 @@ const buildCookieAdapter = (store: RequestCookies) => ({
 });
 
 export async function createSupabaseServerClient(): Promise<SupabaseClient<Database>> {
-  assertEnv(supabaseUrl, "NEXT_PUBLIC_SUPABASE_URL");
-  assertEnv(supabaseAnonKey, "NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  const url = requireEnv(supabaseUrl, "NEXT_PUBLIC_SUPABASE_URL");
+  const key = requireEnv(supabaseAnonKey, "NEXT_PUBLIC_SUPABASE_ANON_KEY");
   const store = await cookies();
-  return createServerClient<Database>(supabaseUrl!, supabaseAnonKey!, {
+  return createServerClient<Database>(url, key, {
     cookies: buildCookieAdapter(store),
   });
 }

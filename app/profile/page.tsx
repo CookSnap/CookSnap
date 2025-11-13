@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +25,8 @@ export default async function ProfilePage() {
     })() ??
     "";
   const email = user?.email ?? "";
+  const firstNameId = `first-name-${randomUUID()}`;
+  const lastNameId = `last-name-${randomUUID()}`;
 
   return (
     <div className="space-y-8">
@@ -36,12 +39,12 @@ export default async function ProfilePage() {
         <form action={updateProfileAction} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="firstName">First name</Label>
-              <Input id="firstName" name="firstName" defaultValue={firstName} placeholder="Taylor" />
+              <Label htmlFor={firstNameId}>First name</Label>
+              <Input id={firstNameId} name="firstName" defaultValue={firstName} placeholder="Taylor" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="lastName">Last name</Label>
-              <Input id="lastName" name="lastName" defaultValue={lastName} placeholder="Nguyen" />
+              <Label htmlFor={lastNameId}>Last name</Label>
+              <Input id={lastNameId} name="lastName" defaultValue={lastName} placeholder="Nguyen" />
             </div>
           </div>
           <div className="space-y-1.5">

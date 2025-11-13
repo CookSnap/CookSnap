@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,11 @@ export function ShoppingListClient({ suggested }: ShoppingListClientProps) {
     store: "",
     note: "",
   });
+  const manualNameId = useId();
+  const manualQtyId = useId();
+  const manualUnitId = useId();
+  const manualStoreId = useId();
+  const manualNoteId = useId();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -223,9 +228,9 @@ export function ShoppingListClient({ suggested }: ShoppingListClientProps) {
           </div>
           <form className="space-y-3" onSubmit={handleManualSubmit}>
             <div className="space-y-1.5">
-              <Label htmlFor="manual-name">Item</Label>
+              <Label htmlFor={manualNameId}>Item</Label>
               <Input
-                id="manual-name"
+                id={manualNameId}
                 placeholder="e.g., almond milk"
                 value={formValues.name}
                 onChange={(event) => setFormValues((prev) => ({ ...prev, name: event.target.value }))}
@@ -234,9 +239,9 @@ export function ShoppingListClient({ suggested }: ShoppingListClientProps) {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="manual-qty">Qty</Label>
+                <Label htmlFor={manualQtyId}>Qty</Label>
               <Input
-                id="manual-qty"
+                id={manualQtyId}
                 placeholder="2"
                 className="sm:max-w-[160px]"
                 value={formValues.qty}
@@ -244,9 +249,9 @@ export function ShoppingListClient({ suggested }: ShoppingListClientProps) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="manual-unit">Unit</Label>
+              <Label htmlFor={manualUnitId}>Unit</Label>
               <Input
-                id="manual-unit"
+                id={manualUnitId}
                 placeholder="cartons"
                 className="sm:max-w-[160px]"
                 value={formValues.unit}
@@ -255,18 +260,18 @@ export function ShoppingListClient({ suggested }: ShoppingListClientProps) {
             </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="manual-store">Store / aisle</Label>
+              <Label htmlFor={manualStoreId}>Store / aisle</Label>
               <Input
-                id="manual-store"
+                id={manualStoreId}
                 placeholder="Trader Joe's"
                 value={formValues.store}
                 onChange={(event) => setFormValues((prev) => ({ ...prev, store: event.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="manual-note">Note</Label>
+              <Label htmlFor={manualNoteId}>Note</Label>
               <textarea
-                id="manual-note"
+                id={manualNoteId}
                 className="min-h-[70px] w-full rounded-xl border border-[rgb(var(--border))] bg-transparent px-3 py-2 text-sm text-[rgb(var(--foreground))] placeholder:text-[rgb(var(--muted-foreground))]"
                 placeholder="Anything special to remember?"
                 value={formValues.note}

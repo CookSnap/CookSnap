@@ -65,6 +65,25 @@ create table if not exists public.barcode_cache (
 alter table public.items add column if not exists upc_metadata jsonb;
 alter table public.items add column if not exists upc_image_url text;
 
+create table if not exists public.external_recipes (
+  id uuid primary key default gen_random_uuid(),
+  provider text not null,
+  external_id text not null,
+  title text not null,
+  image_url text,
+  source_url text,
+  summary text,
+  instructions text,
+  ingredients jsonb not null default '[]'::jsonb,
+  diet_tags text[] not null default '{}',
+  total_time integer,
+  servings integer,
+  last_synced_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(provider, external_id)
+);
+
 -- Helper for RLS
 create or replace function public.is_household_member(p_household uuid, p_user uuid)
 returns boolean
@@ -86,6 +105,7 @@ alter table public.items enable row level security;
 alter table public.recipes enable row level security;
 alter table public.events enable row level security;
 alter table public.barcode_cache enable row level security;
+alter table public.external_recipes enable row level security;
 
 -- Helper anonymous block to drop a policy if it exists
 -- Usage:
@@ -260,6 +280,53 @@ BEGIN
 END;
 $$;
 CREATE POLICY "Authenticated update barcode cache" ON public.barcode_cache
+  FOR UPDATE USING ((SELECT auth.uid()) IS NOT NULL)
+  WITH CHECK ((SELECT auth.uid()) IS NOT NULL);
+
+-- External recipes cache (read for all, insert/update for service role)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'external_recipes'
+      AND policyname = 'Anyone can read external recipes'
+  ) THEN
+    EXECUTE 'DROP POLICY "Anyone can read external recipes" ON public.external_recipes';
+  END IF;
+END;
+$$;
+CREATE POLICY "Anyone can read external recipes" ON public.external_recipes
+  FOR SELECT USING (true);
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'external_recipes'
+      AND policyname = 'Service role inserts external recipes'
+  ) THEN
+    EXECUTE 'DROP POLICY "Service role inserts external recipes" ON public.external_recipes';
+  END IF;
+END;
+$$;
+CREATE POLICY "Service role inserts external recipes" ON public.external_recipes
+  FOR INSERT WITH CHECK ((SELECT auth.uid()) IS NOT NULL);
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'external_recipes'
+      AND policyname = 'Service role updates external recipes'
+  ) THEN
+    EXECUTE 'DROP POLICY "Service role updates external recipes" ON public.external_recipes';
+  END IF;
+END;
+$$;
+CREATE POLICY "Service role updates external recipes" ON public.external_recipes
   FOR UPDATE USING ((SELECT auth.uid()) IS NOT NULL)
   WITH CHECK ((SELECT auth.uid()) IS NOT NULL);
 

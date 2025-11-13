@@ -1,9 +1,9 @@
 <h1 align="left">
   <img src="./public/favicon.svg" alt="CookSnap logo" width="100" height="100" style="vertical-align:middle;margin-right:12px;" />
-  CookSnap · Alpha v0.4
+  CookSnap · Alpha v0.5
 </h1>
 
-CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes, OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. Alpha v0.4 layers in real UPC lookups with the browser `BarcodeDetector` API, item-level metadata caching (including product thumbnails), and a `/pantry/{itemId}` detail route with edit/delete controls. This guide walks through the setup, current features, what’s coming next, and how the stack fits together.
+CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes, OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. Alpha v0.5 layers in real UPC lookups with the browser `BarcodeDetector` API, item-level metadata caching (including product thumbnails), a `/pantry/{itemId}` detail route, and a brand-new open recipe pipeline that streams thousands of CSV rows into a precomputed JSON cache for lightning-fast fuzzy search and pantry-aware suggestions. This guide walks through the setup, current features, what’s coming next, and how the stack fits together.
 
 ## Installation & Setup (from zero)
 1. **Clone the repository**
@@ -28,8 +28,9 @@ CookSnap is a full-stack pantry ops platform built with Next.js App Router + Sup
       NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
       SUPABASE_URL=your_project_url
       SUPABASE_ANON_KEY=your_anon_key
+      SPOONACULAR_API_KEY=your_spoonacular_key
       ```
-      (Server helpers reuse the same anon key; no service key required for this Alpha.)
+      (Server helpers reuse the same anon key; no service key required for this Alpha.) The Spoonacular key powers live recipe enrichment—omit it if you’re fine using the bundled fallback recipes.
 
 4. **Provision the database**
    - Open Supabase → SQL Editor and paste `docs/supabase.sql`.
@@ -49,9 +50,18 @@ CookSnap is a full-stack pantry ops platform built with Next.js App Router + Sup
    - `npm run typecheck` → TypeScript `--noEmit`
    - `npm run build` → Production build smoke test
 
-Once those steps are complete, CookSnap Alpha v0.4 is fully operational locally.
+Once those steps are complete, CookSnap Alpha v0.5 is fully operational locally.
 
-## Implemented Features (Alpha v0.4)
+### Optional: large recipe dataset
+To unlock thousands of offline recipes, download an open dataset (e.g., [openrecipes](https://github.com/mennovanhout/openrecipes) CSV) and place it under `data/open-recipes/full_dataset.csv`. For fast fuzzy search, convert that CSV once into a JSON cache:
+
+```bash
+python scripts/build-open-recipes.py
+```
+
+This writes `data/open-recipes/dataset.json`, which CookSnap loads at start-up instead of reparsing the CSV on every request. These files are ignored by git—commit only the instructions, not the data.
+
+## Implemented Features (Alpha v0.5)
 - **Supabase-authenticated households**: Users sign in via Google OAuth, and the API auto-creates a household + membership with safe RLS defaults (now resilient to RLS-returning errors thanks to UUID pre-generation).
 - **Three add flows**:
   - *Barcode scanning* powered by the native `BarcodeDetector` API (with ZXing-compatible fallbacks ready to slot in) plus Open Food Facts lookups.
@@ -68,7 +78,8 @@ Once those steps are complete, CookSnap Alpha v0.4 is fully operational locally.
   - Auto-generated ingredient gaps per recipe with recipe context tags.
   - Manual reminder list with local persistence, completion toggles, and downloadable `.txt` export.
 - **Recipes view**:
-  - Client-side filters (tags/diet/time) with fallback to bundled recipes, and safer loading when no household membership exists.
+  - Spoonacular-backed recipe suggestions cached in Supabase with source links and thumbnails.
+  - Local CSV → JSON pipeline (`scripts/build-open-recipes.py`) that powers fast fuzzy search (Fuse.js) and NER-based pantry matching even when offline.
 - **Profile hub (/profile)**:
   - Update first/last name via Supabase metadata and log out from the same page; header “Hey, {name}” links directly here.
 - **Navigation & branding refresh**:
@@ -132,4 +143,4 @@ biome.json          Lint/format rules
 README.md           You are here
 ```
 
-CookSnap Alpha v0.4 is stable enough for local demos; future milestones will layer in collaboration, analytics, and the enhanced automation features listed above. Contributions and issue reports are welcome—open a PR or drop feedback in the repo.
+CookSnap Alpha v0.5 is stable enough for local demos; future milestones will layer in collaboration, analytics, and the enhanced automation features listed above. Contributions and issue reports are welcome—open a PR or drop feedback in the repo.

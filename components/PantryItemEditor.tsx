@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Item } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,12 @@ export function PantryItemEditor({ item }: PantryItemEditorProps) {
     }
   };
 
+  const nameId = useId();
+  const qtyId = useId();
+  const unitId = useId();
+  const categoryId = useId();
+  const storageId = useId();
+
   const handleDelete = async () => {
     const confirmed = window.confirm("Remove this item from your pantry?");
     if (!confirmed) {
@@ -110,30 +116,30 @@ export function PantryItemEditor({ item }: PantryItemEditorProps) {
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="item-name">Name</Label>
-        <Input id="item-name" value={form.name} onChange={(event) => updateField("name", event.target.value)} required />
+        <Label htmlFor={nameId}>Name</Label>
+        <Input id={nameId} value={form.name} onChange={(event) => updateField("name", event.target.value)} required />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-2">
-          <Label htmlFor="item-qty">Quantity</Label>
-          <Input id="item-qty" type="number" min="0" step="0.1" value={form.qty} onChange={(event) => updateField("qty", event.target.value)} />
+          <Label htmlFor={qtyId}>Quantity</Label>
+          <Input id={qtyId} type="number" min="0" step="0.1" value={form.qty} onChange={(event) => updateField("qty", event.target.value)} />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="item-unit">Unit</Label>
-          <Input id="item-unit" value={form.unit} onChange={(event) => updateField("unit", event.target.value)} placeholder="pack, ct, g" />
+          <Label htmlFor={unitId}>Unit</Label>
+          <Input id={unitId} value={form.unit} onChange={(event) => updateField("unit", event.target.value)} placeholder="pack, ct, g" />
         </div>
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="item-category">Category</Label>
-        <Input id="item-category" value={form.category} onChange={(event) => updateField("category", event.target.value)} placeholder="Pantry, Produce" />
+        <Label htmlFor={categoryId}>Category</Label>
+        <Input id={categoryId} value={form.category} onChange={(event) => updateField("category", event.target.value)} placeholder="Pantry, Produce" />
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="item-storage">Storage</Label>
+        <Label htmlFor={storageId}>Storage</Label>
         <select
-          id="item-storage"
+          id={storageId}
           value={form.storage}
           onChange={(event) => updateField("storage", event.target.value)}
           className="rounded-2xl border border-[rgb(var(--border))] bg-transparent px-3 py-2 text-sm"

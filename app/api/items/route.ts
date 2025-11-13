@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { riskFor } from "@/lib/risk";
 import { createSupabaseRouteClient, requireUserId } from "@/lib/supabase";
 import type { Item } from "@/types";

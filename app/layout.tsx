@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import Script from "next/script";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -40,7 +41,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* biome-ignore lint/correctness/useUniqueElementIds: Next.js inline script requires a stable id */}
+        <Script id="theme-script" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
       </head>
       <body className="relative min-h-screen bg-[rgb(var(--background))] text-[rgb(var(--foreground))]">
         <header className="sticky top-0 z-50 border-b border-[rgb(var(--border))]/70 bg-[rgb(var(--background))]/80 backdrop-blur">
