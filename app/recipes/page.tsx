@@ -29,7 +29,7 @@ async function loadContext(): Promise<RecipesContext> {
 
     const dbRecipesPromise = supabase.from("recipes").select("*").order("time_min", { ascending: true });
 
-    const [{ data: membership }, { data: dbRecipes = [] }] = await Promise.all([membershipPromise, dbRecipesPromise]);
+    const [{ data: membership }, { data: dbRecipesData }] = await Promise.all([membershipPromise, dbRecipesPromise]);
 
     const householdId = membership?.household_id ?? null;
 
@@ -46,7 +46,9 @@ async function loadContext(): Promise<RecipesContext> {
     ]);
     const datasetAvailable = featured.length > 0;
 
-    const fallbackRecipes: Recipe[] = dbRecipes.length ? (dbRecipes as Recipe[]) : (baseRecipes as Recipe[]);
+    const dbRecipes = (dbRecipesData ?? []) as Recipe[];
+
+    const fallbackRecipes: Recipe[] = dbRecipes.length ? dbRecipes : (baseRecipes as Recipe[]);
     const displayFeatured = datasetAvailable ? featured : fallbackRecipes.slice(0, 10);
     const displayPantryMatches = datasetAvailable ? pantryMatches : [];
     const displayUseNow = datasetAvailable ? useNow : [];

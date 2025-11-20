@@ -311,20 +311,21 @@ function getDatasetSource(): { sourceSignature: string | null } {
 async function loadFuseIndex(dataset: EnrichedRecipe[]): Promise<FuseIndex<EnrichedRecipe> | undefined> {
   const store = getDatasetStore();
   const signature = store.signature;
+  const keys = (FUSE_OPTIONS.keys ?? []) as any;
   if (!signature) {
-    return Fuse.createIndex<EnrichedRecipe>(FUSE_OPTIONS.keys ?? [], dataset);
+    return Fuse.createIndex<EnrichedRecipe>(keys, dataset);
   }
 
   const persisted = await readPersistedFuseIndex(signature);
   if (persisted) {
     try {
-      return Fuse.parseIndex(persisted, dataset);
+      return Fuse.parseIndex<EnrichedRecipe>(persisted);
     } catch {
       // fall through to rebuilding the index
     }
   }
 
-  const freshIndex = Fuse.createIndex<EnrichedRecipe>(FUSE_OPTIONS.keys ?? [], dataset);
+  const freshIndex = Fuse.createIndex<EnrichedRecipe>(keys, dataset);
   await persistFuseIndex(freshIndex, signature);
   return freshIndex;
 }

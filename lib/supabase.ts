@@ -17,7 +17,9 @@ function requireEnv(variable: string | undefined, name: string): string {
   return variable;
 }
 
-const buildCookieAdapter = (store: ReturnType<typeof cookies>) => ({
+type CookieStore = Awaited<ReturnType<typeof cookies>>;
+
+const buildCookieAdapter = (store: CookieStore) => ({
   get(name: string) {
     return store.get(name)?.value;
   },

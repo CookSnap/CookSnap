@@ -38,10 +38,11 @@ async function getDashboard(): Promise<DashboardResult> {
       .order("created_at", { ascending: false })
       .limit(6);
 
-    const [{ data: membership }, { data: events = [] }] = await Promise.all([membershipPromise, eventsPromise]);
+    const [{ data: membership }, { data: eventsData }] = await Promise.all([membershipPromise, eventsPromise]);
 
     const householdId = membership?.household_id ?? null;
     let typedItems: Item[] = [];
+    const events = (eventsData ?? []) as Array<{ id: string; type: string; payload: unknown; created_at: string }>;
 
     if (householdId) {
       const { data: items = [] } = await supabase
