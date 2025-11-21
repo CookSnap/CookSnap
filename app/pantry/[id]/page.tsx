@@ -38,11 +38,12 @@ async function loadItem(id: string) {
 }
 
 interface PantryItemPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function PantryItemPage({ params }: PantryItemPageProps) {
-  const { item, storages } = await loadItem(params.id);
+  const { id } = await params;
+  const { item, storages } = await loadItem(id);
 
   if (!item) {
     notFound();
