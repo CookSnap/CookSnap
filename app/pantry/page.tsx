@@ -1,30 +1,35 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PantryClient } from "@/components/PantryClient";
+import { PantryWorkspace } from "@/components/PantryWorkspace";
 import { createSupabaseServerClient, requireUserId } from "@/lib/supabase";
-import { riskFor, nextCheckAt } from "@/lib/risk";
-import type { Item } from "@/types";
+import { resolveHouseholdId } from "@/lib/households";
+import { ensureDefaultStorageLocations, fetchStorageLocations } from "@/lib/storage-server";
+import type { Item, StorageLocation } from "@/types";
 
-async function loadPantry() {
+type PantryData = { items: Item[]; storages: StorageLocation[] };
+type PantryResult = PantryData | { error: string };
+
+async function loadPantry(): Promise<PantryResult> {
   const supabase = await createSupabaseServerClient();
   try {
     const userId = await requireUserId(supabase);
-    const { data: membership } = await supabase
-      .from("household_members")
-      .select("household_id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const householdId = await resolveHouseholdId(supabase, userId);
+    await ensureDefaultStorageLocations(supabase, householdId);
 
-    const householdId = membership?.household_id ?? null;
+    const [itemsResult, storages] = await Promise.all([
+      supabase
+        .from("items")
+        .select("*, storage_location:storage_locations(*)")
+        .eq("household_id", householdId)
+        .order("added_at", { ascending: false }),
+      fetchStorageLocations(supabase, householdId),
+    ]);
 
-    const { data: items = [] } = await supabase
-      .from("items")
-      .select("*")
-      .eq("household_id", householdId)
-      .order("added_at", { ascending: false });
+    if (itemsResult.error) {
+      throw itemsResult.error;
+    }
 
-    return { items: items as Item[] };
+    return { items: (itemsResult.data ?? []) as Item[], storages };
   } catch (error) {
     return { error: (error as Error).message };
   }
@@ -33,7 +38,7 @@ async function loadPantry() {
 export default async function PantryPage() {
   const data = await loadPantry();
 
-  if (data.error) {
+  if ("error" in data) {
     return (
       <div className="flex flex-col items-center gap-4 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--accent))]/20 p-10 text-center">
         <h1 className="text-2xl font-semibold">Sign in to view your pantry</h1>
@@ -47,40 +52,11 @@ export default async function PantryPage() {
     );
   }
 
-  const { items } = data;
-
-  if (!items?.length) {
-    return (
-      <Card className="mx-auto max-w-xl text-center">
-        <CardHeader>
-          <CardTitle>Your pantry is empty</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm text-[rgb(var(--muted-foreground))]">
-          <p>Add items via barcode, receipt, or manual entry to start tracking freshness.</p>
-          <Button asChild>
-            <Link href="/add">Add your first item</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const nextCheck = items
-    .map((item) => nextCheckAt(item))
-    .sort((a, b) => a.getTime() - b.getTime())
-    .at(0);
-
-  const dangerCount = items.filter((item) => ["risky", "use-now"].includes(riskFor(item))).length;
+  const { items, storages } = data;
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-3xl font-semibold">Household pantry</h1>
-        <p className="text-sm text-[rgb(var(--muted-foreground))]">
-          Next freshness pulse {nextCheck ? new Date(nextCheck).toLocaleDateString() : "soon"}. {dangerCount} item(s) need attention.
-        </p>
-      </header>
-      <PantryClient initialItems={items} />
+      <PantryWorkspace initialItems={items} initialStorages={storages} />
     </div>
   );
 }

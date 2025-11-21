@@ -6,15 +6,30 @@ import type { Item, Recipe } from "@/types";
 import { RecipesClient } from "@/components/RecipesClient";
 import { getRandomOpenRecipes, getBestPantryMatches, getUseNowRecipes } from "@/lib/open-recipes";
 
-async function loadContext() {
+type RecipesContext =
+  | { error: string }
+  | {
+      items: Item[];
+      featured: Recipe[];
+      pantryMatches: Recipe[];
+      useNow: Recipe[];
+      fallbackRecipes: Recipe[];
+      datasetAvailable: boolean;
+    };
+
+async function loadContext(): Promise<RecipesContext> {
   const supabase = await createSupabaseServerClient();
   try {
     const userId = await requireUserId(supabase);
-    const { data: membership } = await supabase
+    const membershipPromise = supabase
       .from("household_members")
       .select("household_id")
       .eq("user_id", userId)
       .maybeSingle();
+
+    const dbRecipesPromise = supabase.from("recipes").select("*").order("time_min", { ascending: true });
+
+    const [{ data: membership }, { data: dbRecipesData }] = await Promise.all([membershipPromise, dbRecipesPromise]);
 
     const householdId = membership?.household_id ?? null;
 
@@ -24,14 +39,16 @@ async function loadContext() {
       items = (householdItems ?? []) as Item[];
     }
 
-    const { data: dbRecipes = [] } = await supabase.from("recipes").select("*").order("time_min", { ascending: true });
-
-    const featured = await getRandomOpenRecipes(10);
-    const pantryMatches = await getBestPantryMatches(items, 4);
-    const useNow = await getUseNowRecipes(items, 4);
+    const [featured, pantryMatches, useNow] = await Promise.all([
+      getRandomOpenRecipes(10),
+      getBestPantryMatches(items, 4),
+      getUseNowRecipes(items, 4),
+    ]);
     const datasetAvailable = featured.length > 0;
 
-    const fallbackRecipes: Recipe[] = dbRecipes.length ? (dbRecipes as Recipe[]) : (baseRecipes as Recipe[]);
+    const dbRecipes = (dbRecipesData ?? []) as Recipe[];
+
+    const fallbackRecipes: Recipe[] = dbRecipes.length ? dbRecipes : (baseRecipes as Recipe[]);
     const displayFeatured = datasetAvailable ? featured : fallbackRecipes.slice(0, 10);
     const displayPantryMatches = datasetAvailable ? pantryMatches : [];
     const displayUseNow = datasetAvailable ? useNow : [];
@@ -45,7 +62,7 @@ async function loadContext() {
 export default async function RecipesPage() {
   const context = await loadContext();
 
-  if (context.error) {
+  if ("error" in context) {
     return (
       <div className="flex flex-col items-center gap-4 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--accent))]/20 p-10 text-center">
         <h1 className="text-2xl font-semibold">Use-it-now recipes, once you sign in</h1>

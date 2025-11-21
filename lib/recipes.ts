@@ -54,8 +54,9 @@ function normalizeIngredients(recipe: SpoonacularRecipe) {
 }
 
 function mapExternalRowToRecipe(row: ExternalRecipe): Recipe {
+  const id = row.id ?? `${row.provider}:${row.external_id}`;
   return {
-    id: row.id,
+    id,
     title: row.title,
     time_min: row.total_time ?? undefined,
     diet: row.diet_tags?.[0] ?? undefined,
@@ -108,11 +109,12 @@ export async function getRecipeSuggestions(
   { take = 8 }: { take?: number } = {}
 ): Promise<Recipe[]> {
   const limit = Math.max(take, 1);
-  const { data: cached = [] } = await supabase
+  const { data: cachedData } = await supabase
     .from("external_recipes")
     .select("*")
     .order("last_synced_at", { ascending: false })
     .limit(limit);
+  const cached = (cachedData ?? []) as ExternalRecipe[];
 
   if (cached.length >= limit && cached.every((recipe) => Date.now() - new Date(recipe.last_synced_at).getTime() < MAX_RECIPE_AGE_MS)) {
     return cached.map((row) => mapExternalRowToRecipe(row as ExternalRecipe));
@@ -122,19 +124,20 @@ export async function getRecipeSuggestions(
     const fresh = await fetchSpoonacularRecipes(limit - cached.length || limit);
     if (fresh.length) {
       await supabase.from("external_recipes").upsert(fresh, { onConflict: "provider,external_id" });
-      const { data: refreshed = [] } = await supabase
+      const { data: refreshedData } = await supabase
         .from("external_recipes")
         .select("*")
         .order("last_synced_at", { ascending: false })
         .limit(limit);
-      return refreshed.map((row) => mapExternalRowToRecipe(row as ExternalRecipe));
+      const refreshed = (refreshedData ?? []) as ExternalRecipe[];
+      return refreshed.map((row) => mapExternalRowToRecipe(row));
     }
   } catch (error) {
     console.warn("Unable to refresh external recipes", error);
   }
 
   if (cached.length) {
-    return cached.map((row) => mapExternalRowToRecipe(row as ExternalRecipe));
+    return cached.map((row) => mapExternalRowToRecipe(row));
   }
 
   return [];

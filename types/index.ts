@@ -1,3 +1,14 @@
+export type StorageCategory = "dry" | "fridge" | "freezer";
+
+export interface StorageLocation {
+  id: string;
+  household_id: string;
+  name: string;
+  category: StorageCategory;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Item {
   id: string;
   name: string;
@@ -5,6 +16,8 @@ export interface Item {
   unit: string | null;
   category: string | null;
   storage: string | null;
+  storage_location_id?: string | null;
+  storage_location?: StorageLocation | null;
   barcode: string | null;
   upc_image_url: string | null;
   upc_metadata: BarcodeProduct | null;
@@ -36,7 +49,7 @@ export interface Recipe {
 }
 
 export interface ExternalRecipe {
-  id: string;
+  id?: string;
   provider: string;
   external_id: string;
   title: string;
