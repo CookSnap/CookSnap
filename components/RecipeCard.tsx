@@ -30,6 +30,12 @@ export function RecipeCard({ recipe, pantryItems }: RecipeCardProps) {
     () => recipe.ingredients.filter((ingredient) => !pantrySet.has(normalize(ingredient.name))),
     [recipe.ingredients, pantrySet]
   );
+  const sourceUrl = useMemo(() => {
+    const raw = recipe.source_url?.trim();
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw)) return raw;
+    return `https://${raw.replace(/^\/+/, "")}`;
+  }, [recipe.source_url]);
   const [added, setAdded] = useState(false);
 
   const handleAddIngredients = () => {
@@ -66,9 +72,9 @@ export function RecipeCard({ recipe, pantryItems }: RecipeCardProps) {
             );
           })}
         </ul>
-        {recipe.source_url ? (
+        {sourceUrl ? (
           <Button asChild variant="outline" className="mt-2 w-full text-xs">
-            <a href={recipe.source_url} target="_blank" rel="noreferrer">
+            <a href={sourceUrl} target="_blank" rel="noreferrer">
               View directions
             </a>
           </Button>

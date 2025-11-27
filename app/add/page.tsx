@@ -4,7 +4,7 @@ import { BarcodeAdd } from "@/components/BarcodeAdd";
 import { ReceiptAdd } from "@/components/ReceiptAdd";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { createSupabaseServerClient } from "@/lib/supabase";
+import { createSupabaseServerClient, requireUserId } from "@/lib/supabase";
 import { resolveHouseholdId } from "@/lib/households";
 import { ensureDefaultStorageLocations, fetchStorageLocations } from "@/lib/storage-server";
 import type { StorageLocation } from "@/types";
@@ -36,6 +36,7 @@ function Tips() {
 
 export default async function AddPage() {
   const supabase = await createSupabaseServerClient();
+  await requireUserId(supabase);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -60,10 +61,7 @@ export default async function AddPage() {
           </TabsList>
           <TabsContent value="barcode">
             <Suspense fallback={<Button disabled>Loading scanner…</Button>}>
-              <BarcodeAdd
-                defaultStorageId={storageLocations[0]?.id}
-                defaultStorageCategory={storageLocations[0]?.category}
-              />
+              <BarcodeAdd />
             </Suspense>
           </TabsContent>
           <TabsContent value="receipt">

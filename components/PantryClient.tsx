@@ -169,6 +169,35 @@ export function PantryClient({ initialItems, storageLocations }: PantryClientPro
     void moveItems(storageId, draggingIds);
   };
 
+  const deleteSelected = async () => {
+    if (!selectedIds.size) return;
+    const confirmDelete = window.confirm(`Delete ${selectedIds.size} item(s)? This cannot be undone.`);
+    if (!confirmDelete) return;
+    setSaving(true);
+    setError(null);
+    const ids = Array.from(selectedIds);
+    const previous = items;
+    setItems((prev) => prev.filter((item) => !selectedIds.has(item.id)));
+    try {
+      const response = await fetch("/api/items", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error ?? "Unable to delete items");
+      }
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+    } catch (err) {
+      setItems(previous);
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const renderItemCard = (item: Item, expanded: boolean) => {
     const selected = selectedIds.has(item.id);
     const commonProps = {
@@ -292,13 +321,13 @@ export function PantryClient({ initialItems, storageLocations }: PantryClientPro
           {section.storages.length ? (
             <div className="space-y-4">
               {section.storages.map((storage) => (
-                <button
+                <div
                   key={storage.id}
+                  role="button"
+                  tabIndex={0}
                   className={`${storageSpacing} rounded-3xl border border-[rgb(var(--border))]/50 ${storageCardPadding} shadow-sm ${
                     activeDropId === storage.id ? "bg-[rgb(var(--accent))]/20" : "bg-[rgb(var(--card))]"
                   }`}
-                  type="button"
-                  tabIndex={0}
                   onDragOver={(event) => {
                     event.preventDefault();
                     setActiveDropId(storage.id);
@@ -387,7 +416,7 @@ export function PantryClient({ initialItems, storageLocations }: PantryClientPro
                   ) : (
                     <p className="text-xs text-[rgb(var(--muted-foreground))]">Collapsed</p>
                   )}
-                </button>
+                </div>
               ))}
             </div>
           ) : (
@@ -435,6 +464,16 @@ export function PantryClient({ initialItems, storageLocations }: PantryClientPro
           {selectionMode ? (
             <span className="text-xs text-[rgb(var(--muted-foreground))]">{selectedIds.size} selected</span>
           ) : null}
+          {selectionMode && selectedIds.size ? (
+            <button
+              type="button"
+              onClick={() => void deleteSelected()}
+              disabled={saving}
+              className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
+            >
+              Delete selected
+            </button>
+          ) : null}
         </div>
         {saving ? <span className="text-xs text-[rgb(var(--muted-foreground))]">Saving…</span> : null}
         {error ? <span className="text-xs text-rose-400">{error}</span> : null}
@@ -443,7 +482,7 @@ export function PantryClient({ initialItems, storageLocations }: PantryClientPro
       {unassignedContent ? (
         <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
           {storagesContent}
-          {unassignedContent}
+          <div className="lg:sticky lg:top-24 lg:self-start">{unassignedContent}</div>
         </div>
       ) : (
         storagesContent
