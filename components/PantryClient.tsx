@@ -321,11 +321,10 @@ export function PantryClient({ initialItems, storageLocations }: PantryClientPro
           {section.storages.length ? (
             <div className="space-y-4">
               {section.storages.map((storage) => (
-                <div
+                <button
                   key={storage.id}
-                  role="button"
-                  tabIndex={0}
-                  className={`${storageSpacing} rounded-3xl border border-[rgb(var(--border))]/50 ${storageCardPadding} shadow-sm ${
+                  type="button"
+                  className={`${storageSpacing} w-full rounded-3xl border border-[rgb(var(--border))]/50 ${storageCardPadding} text-left shadow-sm ${
                     activeDropId === storage.id ? "bg-[rgb(var(--accent))]/20" : "bg-[rgb(var(--card))]"
                   }`}
                   onDragOver={(event) => {
@@ -416,7 +415,7 @@ export function PantryClient({ initialItems, storageLocations }: PantryClientPro
                   ) : (
                     <p className="text-xs text-[rgb(var(--muted-foreground))]">Collapsed</p>
                   )}
-                </div>
+                </button>
               ))}
             </div>
           ) : (

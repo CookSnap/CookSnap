@@ -311,7 +311,8 @@ function getDatasetSource(): { sourceSignature: string | null } {
 async function loadFuseIndex(dataset: EnrichedRecipe[]): Promise<FuseIndex<EnrichedRecipe> | undefined> {
   const store = getDatasetStore();
   const signature = store.signature;
-  const keys = (FUSE_OPTIONS.keys ?? []) as any;
+  const keys: ReadonlyArray<Fuse.FuseOptionKey<EnrichedRecipe>> =
+    (FUSE_OPTIONS.keys ?? []) as ReadonlyArray<Fuse.FuseOptionKey<EnrichedRecipe>>;
   if (!signature) {
     return Fuse.createIndex<EnrichedRecipe>(keys, dataset);
   }

@@ -8,7 +8,7 @@ const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY;
 
 // Use a permissive Database type until a generated Supabase type is added
-export type Database = any;
+export type Database = Record<string, unknown>;
 
 function requireEnv(variable: string | undefined, name: string): string {
   if (!variable) {

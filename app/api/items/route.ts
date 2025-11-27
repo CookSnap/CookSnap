@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 
   const payload = await request.json();
   const rawItems = Array.isArray(payload.items) ? payload.items : [payload];
-  const items = rawItems as Array<Record<string, any>>;
+  const items = rawItems as Array<Record<string, unknown>>;
 
   const inserts = items.map((item) => {
     const storageIdProvided = Object.hasOwn(item, "storage_location_id");
