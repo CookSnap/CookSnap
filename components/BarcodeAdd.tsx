@@ -7,15 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { track } from "@/lib/analytics";
 import type { BarcodeLookupResponse, StorageCategory } from "@/types";
+import { prepareZXingModule, readBarcodes } from "zxing-wasm/reader";
 
 const UPC_PLACEHOLDER = "012993441012";
+const ZXING_WASM_URL = "https://cdn.jsdelivr.net/npm/zxing-wasm@2.2.2/dist/reader/zxing_reader.wasm";
 
 interface BarcodeAddProps {
   defaultStorageId?: string | null;
-  defaultStorageCategory?: StorageCategory;
+  defaultStorageCategory?: StorageCategory | null;
 }
 
-export function BarcodeAdd({ defaultStorageId, defaultStorageCategory = "dry" }: BarcodeAddProps = {}) {
+export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = null }: BarcodeAddProps = {}) {
   const [scanning, setScanning] = useState(false);
   const [barcode, setBarcode] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
@@ -27,6 +29,8 @@ export function BarcodeAdd({ defaultStorageId, defaultStorageCategory = "dry" }:
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const detectorRef = useRef<BarcodeDetector | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const zxingReadyRef = useRef<Promise<void> | null>(null);
 
   const cleanedValue = useMemo(() => barcode.replace(/\D/g, ""), [barcode]);
 
@@ -149,12 +153,7 @@ export function BarcodeAdd({ defaultStorageId, defaultStorageCategory = "dry" }:
       return;
     }
 
-    if (!("BarcodeDetector" in window)) {
-      setCameraError("Barcode detection is not supported in this browser. Use manual entry.");
-      setScanning(false);
-      return;
-    }
-
+    const hasNativeDetector = "BarcodeDetector" in window;
     const video = videoRef.current as (HTMLVideoElement & {
       requestVideoFrameCallback?: (callback: () => void) => number;
     }) | null;
@@ -162,23 +161,37 @@ export function BarcodeAdd({ defaultStorageId, defaultStorageCategory = "dry" }:
       return;
     }
 
-    if (!detectorRef.current) {
+    if (hasNativeDetector && !detectorRef.current) {
       try {
         detectorRef.current = new window.BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] });
       } catch (err) {
         setCameraError(err instanceof Error ? err.message : "Unable to start barcode detector");
-        setScanning(false);
-        return;
       }
+    } else if (!hasNativeDetector && !zxingReadyRef.current) {
+      zxingReadyRef.current = prepareZXingModule({
+        overrides: {
+          locateFile: () => ZXING_WASM_URL,
+        },
+        fireImmediately: true,
+      }).then(() => undefined);
     }
 
     let cancelled = false;
     let rafId: number | null = null;
 
+    const ensureZXingReady = async () => {
+      if (!zxingReadyRef.current) return;
+      try {
+        await zxingReadyRef.current;
+      } catch (err) {
+        console.error("ZXing init failed", err);
+      }
+    };
+
     const scheduleNext = () => {
       if (cancelled) return;
       if (typeof video.requestVideoFrameCallback === "function") {
-        video.requestVideoFrameCallback((_now, _meta) => {
+        video.requestVideoFrameCallback(() => {
           void detectFrame();
         });
       } else {
@@ -195,23 +208,51 @@ export function BarcodeAdd({ defaultStorageId, defaultStorageCategory = "dry" }:
         return;
       }
 
-      try {
-        const bitmap = await createImageBitmap(video);
-        const detector = detectorRef.current;
-        if (!detector) {
+      if (hasNativeDetector && detectorRef.current) {
+        try {
+          const bitmap = await createImageBitmap(video);
+          const detections = await detectorRef.current.detect(bitmap);
           bitmap.close?.();
+          const match = detections.find((item) => item.rawValue);
+          if (match?.rawValue) {
+            await runLookup(match.rawValue, { updateInput: true });
+            setScanning(false);
+            return;
+          }
+        } catch (err) {
+          console.error("Barcode detection failed", err);
+        }
+        scheduleNext();
+        return;
+      }
+
+      // Fallback: ZXing WASM for browsers without BarcodeDetector.
+      try {
+        await ensureZXingReady();
+        const canvas = canvasRef.current ?? document.createElement("canvas");
+        canvasRef.current = canvas;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) {
+          scheduleNext();
           return;
         }
-        const detections = await detector.detect(bitmap);
-        bitmap.close?.();
-        const match = detections.find((item) => item.rawValue);
-        if (match?.rawValue) {
-          await runLookup(match.rawValue, { updateInput: true });
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const frame = context.getImageData(0, 0, canvas.width, canvas.height);
+        const results = await readBarcodes(frame, {
+          formats: ["EAN-13", "EAN-8", "UPC-A", "UPC-E"],
+          maxNumberOfSymbols: 1,
+          tryHarder: true,
+        });
+        const match = results.find((result) => result.text);
+        if (match?.text) {
+          await runLookup(match.text, { updateInput: true });
           setScanning(false);
           return;
         }
       } catch (err) {
-        console.error("Barcode detection failed", err);
+        console.error("ZXing detection failed", err);
       }
 
       scheduleNext();
@@ -260,8 +301,8 @@ export function BarcodeAdd({ defaultStorageId, defaultStorageCategory = "dry" }:
       qty: 1,
       unit: result.product.quantity ?? null,
       category: derivedCategory,
-      storage: defaultStorageCategory,
-      storage_location_id: defaultStorageId ?? null,
+      storage: defaultStorageCategory ?? null,
+      storage_location_id: defaultStorageId,
       barcode: result.upc,
       upc_metadata: result.product,
       upc_image_url: result.product.image ?? null,

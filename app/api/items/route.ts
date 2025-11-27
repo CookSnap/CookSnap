@@ -77,20 +77,25 @@ export async function POST(request: Request) {
 
   const payload = await request.json();
   const rawItems = Array.isArray(payload.items) ? payload.items : [payload];
-  const items = rawItems as Array<Record<string, any>>;
+  const items = rawItems as Array<Record<string, unknown>>;
 
   const inserts = items.map((item) => {
-    const requestedCategory = normalizeStorageCategory(item.storage);
+    const storageIdProvided = Object.hasOwn(item, "storage_location_id");
+    const storageKeyProvided = Object.hasOwn(item, "storage");
+    const requestedCategory = normalizeStorageCategory(item.storage as string | null | undefined);
     const requestedLocationId = typeof item.storage_location_id === "string" ? item.storage_location_id : undefined;
-    const location = resolveStorageLocation(lookups, requestedLocationId, requestedCategory);
-    const storageCategory: StorageCategory = location?.category ?? requestedCategory ?? "dry";
+    const unassignedRequested =
+      (storageIdProvided && item.storage_location_id === null && !requestedCategory) ||
+      (storageKeyProvided && item.storage === null && !requestedLocationId);
+    const location = unassignedRequested ? null : resolveStorageLocation(lookups, requestedLocationId, requestedCategory);
+    const storageCategory: StorageCategory | null = location?.category ?? requestedCategory ?? null;
     return {
       name: item.name,
       qty: item.qty ?? 1,
       unit: item.unit ?? null,
       category: item.category ?? null,
       storage: storageCategory,
-      storage_location_id: location?.id ?? lookups.first?.id ?? null,
+      storage_location_id: unassignedRequested ? null : location?.id ?? null,
       barcode: item.barcode ?? null,
       upc_metadata: item.upc_metadata ?? null,
       upc_image_url: item.upc_image_url ?? null,
@@ -248,13 +253,37 @@ export async function DELETE(request: Request) {
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 401 });
   }
-  const { id } = await request.json();
+  const { id, ids } = await request.json();
 
-  if (!id) {
-    return NextResponse.json({ error: "Provide an id" }, { status: 400 });
+  const targetIds = Array.isArray(ids)
+    ? ids.filter((value: unknown): value is string => typeof value === "string")
+    : typeof id === "string"
+      ? [id]
+      : [];
+
+  if (!targetIds.length) {
+    return NextResponse.json({ error: "Provide an id or ids" }, { status: 400 });
   }
 
-  const { error } = await supabase.from("items").delete().eq("id", id).eq("user_id", userId);
+  const { data: memberships, error: membershipError } = await supabase
+    .from("household_members")
+    .select("household_id")
+    .eq("user_id", userId);
+
+  if (membershipError) {
+    return NextResponse.json({ error: membershipError.message }, { status: 400 });
+  }
+
+  const householdIds = (memberships ?? []).map((row) => row.household_id);
+  if (!householdIds.length) {
+    return NextResponse.json({ error: "No household membership found" }, { status: 403 });
+  }
+
+  const { error } = await supabase
+    .from("items")
+    .delete()
+    .in("id", targetIds)
+    .in("household_id", householdIds);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

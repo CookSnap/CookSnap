@@ -1,9 +1,9 @@
 <h1 align="left">
   <img src="./public/favicon.svg" alt="CookSnap logo" width="100" height="100" style="vertical-align:middle;margin-right:12px;" />
-  CookSnap · Alpha v0.6
+  CookSnap · Alpha v0.7
 </h1>
 
-CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes, OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. Alpha v0.6 wires the open-recipe pipeline into every surface: the `/recipes` view now ships a dataset-backed search API, Ready/Use-it-now rails, and pantry coverage badges, recipe cards gained a one-tap “Add ingredients to shopping list” action, and the shopping list workspace picked up manual reminder fields, completion toggles, and `.txt` exports. This guide walks through the setup, current features, what’s coming next, and how the stack fits together.
+CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes (now with ZXing WASM fallback), OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. Alpha v0.7 adds a cleaned Open Recipes pipeline (parsed ingredients + pretty JSON), sticky “Unassigned” rail, bulk delete in pantry multi-select, active nav highlighting, stronger auth gating on `/add` + `/shopping_list`, and corrected external recipe links. This guide walks through setup, current features, and what’s next.
 
 ## Installation & Setup (from zero)
 1. **Clone the repository**
@@ -49,24 +49,28 @@ CookSnap is a full-stack pantry ops platform built with Next.js App Router + Sup
 
 Once those steps are complete, CookSnap Alpha v0.6 is fully operational locally.
 
-### Optional: large recipe dataset
-To unlock thousands of offline recipes, download an open dataset (e.g., [openrecipes](https://github.com/mennovanhout/openrecipes) CSV) and place it under `data/open-recipes/full_dataset.csv`. For fast fuzzy search, convert that CSV once into a JSON cache:
+### Optional: large recipe dataset (cleaned)
+- Use the MIT-licensed Open Recipes CSV: place it at `data/open-recipes/full_dataset.csv`.
+- Parse ingredients into structured rows (qty/unit/name) and generate a pretty JSON bundle:
+  ```bash
+  python scripts/convert_open_recipes_to_json.py
+  ```
+  This produces:
+  - `data/open-recipes/parsed_ingredients.csv` (one row per ingredient; generate from the CSV with your parser before running the script)
+  - `data/open-recipes/recipes_clean.json` (pretty-printed, cleaned ingredients with `ingredients_count` for faster search)
 
-```bash
-python scripts/build-open-recipes.py
-```
+CookSnap will prefer the JSON cache when present; otherwise it falls back to `data/recipes.json`. The large artifacts are gitignored—do not commit them.
 
-This writes `data/open-recipes/dataset.json`, which CookSnap loads at start-up instead of reparsing the CSV on every request. These files are ignored by git—commit only the instructions, not the data. Alpha v0.6’s recipe search box and Ready/Use-it-now rails automatically detect this JSON; when it’s missing, the UI falls back to the smaller seeded `data/recipes.json`.
-
-## Implemented Features (Alpha v0.6)
+## Implemented Features (Alpha v0.7)
 - **Supabase-authenticated households**: Users sign in via Google OAuth, and the API auto-creates a household + membership with safe RLS defaults (now resilient to RLS-returning errors thanks to UUID pre-generation).
 - **Three add flows**:
-  - *Barcode scanning* powered by the native `BarcodeDetector` API (with ZXing-compatible fallbacks ready to slot in) plus Open Food Facts lookups.
+  - *Barcode scanning* powered by the native `BarcodeDetector` API with ZXing WASM fallback for older browsers, plus Open Food Facts lookups and UPC caching.
   - *Receipt OCR* (placeholder UI referencing Tesseract.js pipeline).
   - *Manual entry* (fully working form hitting `/api/items`).
 - **Pantry dashboard + revamped pantry view**:
   - Summary cards for inventory size, high-risk count, last event timestamp.
   - New Pantry grouping UI (Pantry / Fridge / Freezer) with Safe / Use-now / Risky clusters, relative timestamps, richer risk badges, UPC thumbnails, and deep-links to `/pantry/{itemId}` editors.
+  - Sticky “Unassigned” column and bulk delete button in multi-select mode; `/add` and `/shopping_list` now require auth.
 - **Item-level detail route (`/pantry/[id]`)**:
   - Inline editor for quantity/unit/category/storage/opened state.
   - Delete action with redirect back to the pantry grid.
@@ -77,11 +81,11 @@ This writes `data/open-recipes/dataset.json`, which CookSnap loads at start-up i
 - **Recipes view**:
   - Ready-now / Use-it-now / Chef’s inspiration rails show pantry coverage, risky ingredient rescues, and random inspiration sourced from the open-recipe dataset (with Supabase + `data/recipes.json` fallbacks when the CSV isn’t present).
   - Dataset-backed search (`/api/recipes/search`) fans out to the CSV/JSON cache via Fuse.js with fallback to `data/recipes.json`, so the search box works even offline.
-  - Recipe cards surface owned vs missing ingredients, show risk badges, and now expose a one-tap “Add ingredients to shopping list” action tied to the workspace above.
+  - Recipe cards surface owned vs missing ingredients, show risk badges, fix external links (auto-prefix `https://`), and expose a one-tap “Add ingredients to shopping list” action tied to the workspace above.
 - **Profile hub (/profile)**:
   - Update first/last name via Supabase metadata and log out from the same page; header “Hey, {name}” links directly here.
 - **Navigation & branding refresh**:
-  - Logo + favicon swap to the new SVG, expanded nav pill for Shopping List, responsive typography tweaks.
+  - Logo + favicon swap to the new SVG, active nav highlighting per route, expanded nav pill for Shopping List, responsive typography tweaks.
 - **API routes**:
   - `/api/items` handles CRUD with household bootstrap + risk recalculation (now pre-generates UUIDs to dodge RLS RETURNING failures) and persists UPC metadata/image references for each item.
   - `/api/recipes/search` pipes queries to the open-recipe dataset (Fuse.js + fallback to `data/recipes.json`) for the new search field.
@@ -117,6 +121,7 @@ CookSnap leans on a modern, typed React stack:
 - **Data + Types**:
   - `data/recipes.json` seeds fallback recipes.
   - `types/index.ts` exports `Item`, `Recipe`, etc., shared between pages/APIs.
+  - Data tooling lives under `scripts/` (e.g., `convert_open_recipes_to_json.py` for cleaned dataset generation).
 - **Styles**:
   - `app/globals.css` defines CSS variables for both themes, Tailwind base utilities, and UI polish.
   - `tailwind.config.ts` scopes scanning to `app/`, `components/`, and `lib/`.
@@ -134,6 +139,7 @@ data/               Seed data (recipes)
 docs/supabase.sql   Schema, RLS, seed script
 lib/                Supabase clients + domain helpers
 public/             Static assets (favicons, logos)
+scripts/            Data helpers (e.g., open-recipes CSV → JSON converter)
 styles/             Extra CSS placeholders
 types/              Shared TypeScript types
 package.json        npm scripts and dependencies

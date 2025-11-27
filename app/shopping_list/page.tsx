@@ -1,6 +1,10 @@
+import { createSupabaseServerClient, requireUserId } from "@/lib/supabase";
 import { ShoppingListClient } from "@/components/ShoppingListClient";
 
-export default function ShoppingListPage() {
+export default async function ShoppingListPage() {
+  const supabase = await createSupabaseServerClient();
+  await requireUserId(supabase);
+
   return (
     <div className="space-y-6">
       <header className="space-y-1">

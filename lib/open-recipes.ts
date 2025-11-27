@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
 import Fuse from "fuse.js";
-import type { FuseIndex, IFuseOptions } from "fuse.js";
+import type { FuseIndex, IFuseOptions, FuseOptionKey } from "fuse.js";
 import type { Item, Recipe, RecipeIngredient } from "@/types";
 
 interface EnrichedRecipe extends Recipe {
@@ -311,7 +311,7 @@ function getDatasetSource(): { sourceSignature: string | null } {
 async function loadFuseIndex(dataset: EnrichedRecipe[]): Promise<FuseIndex<EnrichedRecipe> | undefined> {
   const store = getDatasetStore();
   const signature = store.signature;
-  const keys = (FUSE_OPTIONS.keys ?? []) as any;
+  const keys = Array.from(FUSE_OPTIONS.keys ?? []) as FuseOptionKey<EnrichedRecipe>[];
   if (!signature) {
     return Fuse.createIndex<EnrichedRecipe>(keys, dataset);
   }

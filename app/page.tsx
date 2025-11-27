@@ -5,7 +5,7 @@ import { RecipeCard } from "@/components/RecipeCard";
 import { RiskBadge } from "@/components/RiskBadge";
 import recipes from "@/data/recipes.json";
 import { getUseItNow } from "@/lib/recommend";
-import { createSupabaseServerClient, requireUserId } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase";
 import { riskFor } from "@/lib/risk";
 import { getStorageCategoryLabel, normalizeStorageCategory } from "@/lib/storage";
 import type { Item, Recipe } from "@/types";
@@ -17,13 +17,21 @@ type DashboardData = {
   summary: { totalItems: number; risky: number; lastEvent: string | null };
 };
 
-type DashboardResult = DashboardData | { error: string };
+type DashboardResult = DashboardData | { error: string } | { unauthenticated: true };
 
 async function getDashboard(): Promise<DashboardResult> {
   const supabase = await createSupabaseServerClient();
 
   try {
-    const userId = await requireUserId(supabase);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { unauthenticated: true };
+    }
+
+    const userId = user.id;
 
     const membershipPromise = supabase
       .from("household_members")
@@ -69,14 +77,54 @@ async function getDashboard(): Promise<DashboardResult> {
 
 function SignInCTA() {
   return (
-    <div className="mx-auto max-w-xl rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--accent))]/20 p-8 text-center">
-      <h2 className="text-2xl font-semibold">CookSnap keeps your fridge honest.</h2>
-      <p className="mt-2 text-[rgb(var(--muted-foreground))]">
-        Sign in with Supabase Auth (magic link works great) to sync your household pantry and activity log.
-      </p>
-      <Link href="/login" className="mt-6 inline-flex">
-        <Button size="lg">Launch sign-in</Button>
-      </Link>
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--accent))]/15 shadow-lg">
+        <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        <video
+          className="h-72 w-full object-cover md:h-96"
+          src="/demo.mp4"
+          poster="/demo-poster.jpg"
+          autoPlay
+          muted
+          loop
+          playsInline
+          controls
+        >
+          Your browser does not support the video tag.
+        </video>
+        <div className="absolute bottom-0 left-0 right-0 z-20 p-6 text-white">
+          <p className="text-xs uppercase tracking-[0.3em] text-white/70">See it in action</p>
+          <h2 className="text-2xl font-semibold">Scan. Cook. Share.</h2>
+          <p className="mt-2 text-sm text-white/80">Swap in your own demo video at /public/demo.mp4 to show the flow.</p>
+        </div>
+      </div>
+
+      <div className="space-y-6 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--accent))]/15 p-8 shadow-lg">
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-[rgb(var(--muted-foreground))]">Welcome</p>
+          <h1 className="text-3xl font-semibold text-[rgb(var(--foreground))]">CookSnap keeps your fridge honest.</h1>
+          <p className="text-sm text-[rgb(var(--muted-foreground))]">
+            Scan barcodes, track pantry freshness, and pull recipes that match what you already own.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--accent))]/10 p-4">
+          <p className="text-xs uppercase tracking-wide text-[rgb(var(--muted-foreground))]">Highlights</p>
+          <ul className="mt-2 space-y-2 text-sm text-[rgb(var(--foreground))]">
+            <li>• 200k+ recipes tailored to your pantry</li>
+            <li>• Use-it-now alerts before food expires</li>
+            <li>• Shared shopping lists with barcode scans</li>
+          </ul>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/login">
+            <Button size="lg">Sign in with Google</Button>
+          </Link>
+          <Link href="/recipes" className="inline-flex">
+            <Button variant="outline" size="lg">Browse recipes</Button>
+          </Link>
+        </div>
+        <p className="text-xs text-[rgb(var(--muted-foreground))]">No password needed—Google SSO keeps it simple.</p>
+      </div>
     </div>
   );
 }
@@ -102,6 +150,10 @@ export default async function HomePage() {
   const data = await getDashboard();
 
   if ("error" in data) {
+    return <SignInCTA />;
+  }
+
+  if ("unauthenticated" in data) {
     return <SignInCTA />;
   }
 
