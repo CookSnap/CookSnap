@@ -82,7 +82,7 @@ export async function POST(request: Request) {
   const inserts = items.map((item) => {
     const storageIdProvided = Object.hasOwn(item, "storage_location_id");
     const storageKeyProvided = Object.hasOwn(item, "storage");
-    const requestedCategory = normalizeStorageCategory(item.storage);
+    const requestedCategory = normalizeStorageCategory(item.storage as string | null | undefined);
     const requestedLocationId = typeof item.storage_location_id === "string" ? item.storage_location_id : undefined;
     const unassignedRequested =
       (storageIdProvided && item.storage_location_id === null && !requestedCategory) ||

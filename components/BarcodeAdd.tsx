@@ -241,7 +241,7 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const frame = context.getImageData(0, 0, canvas.width, canvas.height);
         const results = await readBarcodes(frame, {
-          formats: ["ean_13", "ean_8", "upc_a", "upc_e"],
+          formats: ["EAN-13", "EAN-8", "UPC-A", "UPC-E"],
           maxNumberOfSymbols: 1,
           tryHarder: true,
         });
