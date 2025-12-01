@@ -1,9 +1,4 @@
-import { Suspense } from "react";
-import { AddManual } from "@/components/AddManual";
-import { BarcodeAdd } from "@/components/BarcodeAdd";
-import { ReceiptAdd } from "@/components/ReceiptAdd";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import { AddTabsClient } from "@/components/AddTabsClient";
 import { createSupabaseServerClient, requireUserId } from "@/lib/supabase";
 import { resolveHouseholdId } from "@/lib/households";
 import { ensureDefaultStorageLocations, fetchStorageLocations } from "@/lib/storage-server";
@@ -53,24 +48,7 @@ export default async function AddPage() {
     <div className="grid gap-6 lg:grid-cols-[3fr,2fr]">
       <div className="space-y-6">
         <SectionHeading name={greetingName} />
-        <Tabs defaultValue="barcode" className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--accent))]/15 p-6">
-          <TabsList>
-            <TabsTrigger value="barcode">Barcode</TabsTrigger>
-            <TabsTrigger value="receipt">Receipt OCR</TabsTrigger>
-            <TabsTrigger value="manual">Manual</TabsTrigger>
-          </TabsList>
-          <TabsContent value="barcode">
-            <Suspense fallback={<Button disabled>Loading scanner…</Button>}>
-              <BarcodeAdd />
-            </Suspense>
-          </TabsContent>
-          <TabsContent value="receipt">
-            <ReceiptAdd />
-          </TabsContent>
-          <TabsContent value="manual">
-            <AddManual initialStorages={storageLocations} />
-          </TabsContent>
-        </Tabs>
+        <AddTabsClient storageLocations={storageLocations} />
       </div>
       <Tips />
     </div>
