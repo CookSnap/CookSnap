@@ -61,10 +61,17 @@ Once those steps are complete, CookSnap Alpha v0.6 is fully operational locally.
 
 CookSnap will prefer the JSON cache when present; otherwise it falls back to `data/recipes.json`. The large artifacts are gitignored—do not commit them.
 
+### Required asset for barcode fallback
+- Download ZXing WASM to your static assets so the fallback works offline/CSP-safe:
+  ```bash
+  curl -o public/zxing_reader.wasm https://cdn.jsdelivr.net/npm/zxing-wasm@2.2.2/dist/reader/zxing_reader.wasm
+  ```
+  The barcode scanner now loads this self-hosted file by default.
+
 ## Implemented Features (Alpha v0.7)
 - **Supabase-authenticated households**: Users sign in via Google OAuth, and the API auto-creates a household + membership with safe RLS defaults (now resilient to RLS-returning errors thanks to UUID pre-generation).
 - **Three add flows**:
-  - *Barcode scanning* powered by the native `BarcodeDetector` API with ZXing WASM fallback for older browsers, plus Open Food Facts lookups and UPC caching.
+  - *Barcode scanning* powered by the native `BarcodeDetector` API with ZXing WASM fallback for older browsers (self-host `public/zxing_reader.wasm`), plus Open Food Facts lookups and UPC caching.
   - *Receipt OCR* (placeholder UI referencing Tesseract.js pipeline).
   - *Manual entry* (fully working form hitting `/api/items`).
 - **Pantry dashboard + revamped pantry view**:

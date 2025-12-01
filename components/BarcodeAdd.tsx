@@ -11,8 +11,8 @@ import { prepareZXingModule, readBarcodes } from "zxing-wasm/reader";
 
 const UPC_PLACEHOLDER = "012993441012";
 const ZXING_WASM_SOURCES = [
-  // Use CDN by default; avoids serving HTML/404s that break WASM instantiation
-  "https://cdn.jsdelivr.net/npm/zxing-wasm@2.2.2/dist/reader/zxing_reader.wasm",
+  // Prefer self-hosted to avoid CSP/CDN/offline issues (place file in /public)
+  "/zxing_reader.wasm",
 ];
 
 interface BarcodeAddProps {
