@@ -1,6 +1,6 @@
 <h1 align="left">
   <img src="./public/favicon.svg" alt="CookSnap logo" width="100" height="100" style="vertical-align:middle;margin-right:12px;" />
-  CookSnap · Alpha v0.7
+  CookSnap · Alpha v0.8
 </h1>
 
 CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes (now with ZXing WASM fallback), OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. Alpha v0.7 adds a cleaned Open Recipes pipeline (parsed ingredients + pretty JSON), sticky “Unassigned” rail, bulk delete in pantry multi-select, active nav highlighting, stronger auth gating on `/add` + `/shopping_list`, and corrected external recipe links. This guide walks through setup, current features, and what’s next.
