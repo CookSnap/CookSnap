@@ -12,7 +12,7 @@ import { prepareZXingModule, readBarcodes } from "zxing-wasm/reader";
 const UPC_PLACEHOLDER = "012993441012";
 const ZXING_WASM_SOURCES = [
   // Prefer self-hosted to avoid CSP/CDN/offline issues (place file in /public)
-  "/zxing_reader.wasm",
+  "/zxing_reader.v3.wasm",
 ];
 
 interface BarcodeAddProps {
@@ -29,6 +29,7 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [result, setResult] = useState<BarcodeLookupResponse | null>(null);
+  const [mounted, setMounted] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const detectorRef = useRef<BarcodeDetector | null>(null);
@@ -36,6 +37,10 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
   const zxingReadyRef = useRef<Promise<void> | null>(null);
   const zxingUrlRef = useRef<string | null>(null);
   const detectionFrameCountRef = useRef(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const cleanedValue = useMemo(() => barcode.replace(/\D/g, ""), [barcode]);
 
@@ -177,7 +182,7 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
         if (zxingUrlRef.current) return zxingUrlRef.current;
         for (const candidate of ZXING_WASM_SOURCES) {
           try {
-            const res = await fetch(candidate, { method: "GET" });
+            const res = await fetch(candidate, { method: "GET", cache: "no-store" });
             const contentType = res.headers.get("content-type") ?? "";
             if (res.ok && contentType.includes("application/wasm")) {
               zxingUrlRef.current = candidate;
@@ -191,10 +196,10 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
       };
 
       zxingReadyRef.current = (async () => {
-        const wasmUrl = await pickWasmUrl();
+        const url = await pickWasmUrl();
         await prepareZXingModule({
           overrides: {
-            locateFile: () => wasmUrl,
+            locateFile: () => url,
           },
           fireImmediately: true,
         });
@@ -358,6 +363,10 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
       setAddLoading(false);
     }
   }, [clearResult, defaultStorageCategory, defaultStorageId, result]);
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="space-y-4">

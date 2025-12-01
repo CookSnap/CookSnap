@@ -1,14 +1,14 @@
 <h1 align="left">
   <img src="./public/favicon.svg" alt="CookSnap logo" width="100" height="100" style="vertical-align:middle;margin-right:12px;" />
-  CookSnap · Beta v1.0
+  CookSnap · Beta v1.1
 </h1>
 
-CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes (now with ZXing WASM fallback), OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. Alpha v0.7 adds a cleaned Open Recipes pipeline (parsed ingredients + pretty JSON), sticky “Unassigned” rail, bulk delete in pantry multi-select, active nav highlighting, stronger auth gating on `/add` + `/shopping_list`, and corrected external recipe links. This guide walks through setup, current features, and what’s next.
+CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes (native + self-hosted ZXing WASM fallback), OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. Beta v1.1 adds: hardened barcode fallback (self-hosted `zxing_reader.v3.wasm` with cache-busting), client-only add tabs to remove hydration issues, cleaned Open Recipes pipeline (parsed ingredients + pretty JSON), sticky “Unassigned” rail, bulk delete in pantry multi-select, active nav highlighting, stronger auth gating on `/add` + `/shopping_list`, and corrected external recipe links. This guide walks through setup, current features, and what’s next.
 
 ## Installation & Setup (from zero)
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/jaekop/CookSnap.git
+   git clone https://github.com/CookSnap/CookSnap.git
    cd CookSnap
    ```
 
@@ -64,14 +64,14 @@ CookSnap will prefer the JSON cache when present; otherwise it falls back to `da
 ### Required asset for barcode fallback
 - Download ZXing WASM to your static assets so the fallback works offline/CSP-safe:
   ```bash
-  curl -o public/zxing_reader.wasm https://cdn.jsdelivr.net/npm/zxing-wasm@2.2.2/dist/reader/zxing_reader.wasm
+  curl -o public/zxing_reader.v3.wasm https://cdn.jsdelivr.net/npm/zxing-wasm@2.2.2/dist/reader/zxing_reader.wasm
   ```
-  The barcode scanner now loads this self-hosted file by default.
+  The barcode scanner now loads this self-hosted file by default (versioned filename to avoid stale caches).
 
-## Implemented Features (Alpha v0.7)
+## Implemented Features (Beta v1.1)
 - **Supabase-authenticated households**: Users sign in via Google OAuth, and the API auto-creates a household + membership with safe RLS defaults (now resilient to RLS-returning errors thanks to UUID pre-generation).
 - **Three add flows**:
-  - *Barcode scanning* powered by the native `BarcodeDetector` API with ZXing WASM fallback for older browsers (self-host `public/zxing_reader.wasm`), plus Open Food Facts lookups and UPC caching.
+  - *Barcode scanning* powered by the native `BarcodeDetector` API with self-hosted ZXing WASM fallback for older browsers (`public/zxing_reader.v3.wasm`), plus Open Food Facts lookups and UPC caching.
   - *Receipt OCR* (placeholder UI referencing Tesseract.js pipeline).
   - *Manual entry* (fully working form hitting `/api/items`).
 - **Pantry dashboard + revamped pantry view**:
