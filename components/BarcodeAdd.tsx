@@ -37,6 +37,7 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const zxingReadyRef = useRef<Promise<void> | null>(null);
   const zxingUrlRef = useRef<string | null>(null);
+  const detectionFrameCountRef = useRef(0);
 
   const cleanedValue = useMemo(() => barcode.replace(/\D/g, ""), [barcode]);
 
@@ -236,6 +237,7 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
         scheduleNext();
         return;
       }
+      detectionFrameCountRef.current += 1;
 
       if (hasNativeDetector && detectorRef.current) {
         try {
@@ -246,11 +248,14 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
             setScanning(false);
             return;
           }
+          // Also run ZXing every few frames to help older/finicky browsers.
+          if (detectionFrameCountRef.current % 8 !== 0) {
+            scheduleNext();
+            return;
+          }
         } catch (err) {
           console.error("Barcode detection failed", err);
         }
-        scheduleNext();
-        return;
       }
 
       // Fallback: ZXing WASM for browsers without BarcodeDetector.
@@ -365,6 +370,9 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
       {scanning ? (
         <div className="relative h-48 overflow-hidden rounded-2xl border border-dashed border-[rgb(var(--border))] bg-black">
           <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="h-24 w-40 rounded-lg border-2 border-rose-500/80 bg-rose-500/5 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+          </div>
         </div>
       ) : null}
       {cameraError ? <p className="text-sm text-rose-400">Camera error: {cameraError}</p> : null}
