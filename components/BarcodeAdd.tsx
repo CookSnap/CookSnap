@@ -10,7 +10,12 @@ import type { BarcodeLookupResponse, StorageCategory } from "@/types";
 import { prepareZXingModule, readBarcodes } from "zxing-wasm/reader";
 
 const UPC_PLACEHOLDER = "012993441012";
-const ZXING_WASM_URL = "https://cdn.jsdelivr.net/npm/zxing-wasm@2.2.2/dist/reader/zxing_reader.wasm";
+const ZXING_WASM_SOURCES = [
+  // Prefer self-hosted (place zxing_reader.wasm in /public for CSP/offline friendliness)
+  "/zxing_reader.wasm",
+  // Fallback CDN
+  "https://cdn.jsdelivr.net/npm/zxing-wasm@2.2.2/dist/reader/zxing_reader.wasm",
+];
 
 interface BarcodeAddProps {
   defaultStorageId?: string | null;
@@ -31,6 +36,7 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
   const detectorRef = useRef<BarcodeDetector | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const zxingReadyRef = useRef<Promise<void> | null>(null);
+  const zxingUrlRef = useRef<string | null>(null);
 
   const cleanedValue = useMemo(() => barcode.replace(/\D/g, ""), [barcode]);
 
@@ -168,12 +174,35 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
         setCameraError(err instanceof Error ? err.message : "Unable to start barcode detector");
       }
     } else if (!hasNativeDetector && !zxingReadyRef.current) {
-      zxingReadyRef.current = prepareZXingModule({
-        overrides: {
-          locateFile: () => ZXING_WASM_URL,
-        },
-        fireImmediately: true,
-      }).then(() => undefined);
+      const pickWasmUrl = async () => {
+        if (zxingUrlRef.current) return zxingUrlRef.current;
+        for (const candidate of ZXING_WASM_SOURCES) {
+          try {
+            const res = await fetch(candidate, { method: "HEAD" });
+            if (res.ok) {
+              zxingUrlRef.current = candidate;
+              return candidate;
+            }
+          } catch {
+            // try next
+          }
+        }
+        // fallback to last even if head requests fail
+        zxingUrlRef.current = ZXING_WASM_SOURCES[ZXING_WASM_SOURCES.length - 1];
+        return zxingUrlRef.current;
+      };
+
+      zxingReadyRef.current = (async () => {
+        const wasmUrl = await pickWasmUrl();
+        await prepareZXingModule({
+          overrides: {
+            locateFile: () => wasmUrl,
+          },
+          fireImmediately: true,
+        });
+      })().catch((err) => {
+        setCameraError(err instanceof Error ? err.message : "Unable to load scanner fallback");
+      });
     }
 
     let cancelled = false;
@@ -210,9 +239,7 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
 
       if (hasNativeDetector && detectorRef.current) {
         try {
-          const bitmap = await createImageBitmap(video);
-          const detections = await detectorRef.current.detect(bitmap);
-          bitmap.close?.();
+          const detections = await detectorRef.current.detect(video);
           const match = detections.find((item) => item.rawValue);
           if (match?.rawValue) {
             await runLookup(match.rawValue, { updateInput: true });
