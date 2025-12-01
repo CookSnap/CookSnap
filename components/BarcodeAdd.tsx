@@ -11,9 +11,7 @@ import { prepareZXingModule, readBarcodes } from "zxing-wasm/reader";
 
 const UPC_PLACEHOLDER = "012993441012";
 const ZXING_WASM_SOURCES = [
-  // Prefer self-hosted (place zxing_reader.wasm in /public for CSP/offline friendliness)
-  "/zxing_reader.wasm",
-  // Fallback CDN
+  // Use CDN by default; avoids serving HTML/404s that break WASM instantiation
   "https://cdn.jsdelivr.net/npm/zxing-wasm@2.2.2/dist/reader/zxing_reader.wasm",
 ];
 
@@ -179,8 +177,9 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
         if (zxingUrlRef.current) return zxingUrlRef.current;
         for (const candidate of ZXING_WASM_SOURCES) {
           try {
-            const res = await fetch(candidate, { method: "HEAD" });
-            if (res.ok) {
+            const res = await fetch(candidate, { method: "GET" });
+            const contentType = res.headers.get("content-type") ?? "";
+            if (res.ok && contentType.includes("application/wasm")) {
               zxingUrlRef.current = candidate;
               return candidate;
             }
@@ -188,9 +187,7 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
             // try next
           }
         }
-        // fallback to last even if head requests fail
-        zxingUrlRef.current = ZXING_WASM_SOURCES[ZXING_WASM_SOURCES.length - 1];
-        return zxingUrlRef.current;
+        throw new Error("Unable to load ZXing WASM");
       };
 
       zxingReadyRef.current = (async () => {
@@ -202,6 +199,7 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
           fireImmediately: true,
         });
       })().catch((err) => {
+        zxingUrlRef.current = null;
         setCameraError(err instanceof Error ? err.message : "Unable to load scanner fallback");
       });
     }
