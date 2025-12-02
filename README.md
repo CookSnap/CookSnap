@@ -1,9 +1,9 @@
 <h1 align="left">
   <img src="./public/favicon.svg" alt="CookSnap logo" width="100" height="100" style="vertical-align:middle;margin-right:12px;" />
-  CookSnap · Beta v1.1
+  CookSnap · Beta v1.3
 </h1>
 
-CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes (native + self-hosted ZXing WASM fallback), OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. Beta v1.1 adds: hardened barcode fallback (self-hosted `zxing_reader.v3.wasm` with cache-busting), client-only add tabs to remove hydration issues, cleaned Open Recipes pipeline (parsed ingredients + pretty JSON), sticky “Unassigned” rail, bulk delete in pantry multi-select, active nav highlighting, stronger auth gating on `/add` + `/shopping_list`, and corrected external recipe links. This guide walks through setup, current features, and what’s next.
+CookSnap is a full-stack pantry ops platform built with Next.js App Router + Supabase. Scan barcodes (native + self-hosted ZXing WASM fallback), OCR receipts, or add items manually while a Supabase backend keeps risk bands, households, and recipes in sync. Beta v1.3 adds: Safari-safe barcode fallback (self-hosted `zxing_reader.v5.wasm` streamed with identity encoding via `/zxing-wasm?v=8`), client-only add tabs to remove hydration issues, graceful redirects for signed-out `/add` visits, refreshed in-app beta badge, cleaned Open Recipes pipeline (parsed ingredients + pretty JSON), sticky “Unassigned” rail, bulk delete in pantry multi-select, active nav highlighting, stronger auth gating on `/add` + `/shopping_list`, and corrected external recipe links. This guide walks through setup, current features, and what’s next.
 
 ## Installation & Setup (from zero)
 1. **Clone the repository**
@@ -47,7 +47,7 @@ CookSnap is a full-stack pantry ops platform built with Next.js App Router + Sup
    - `npm run typecheck` → TypeScript `--noEmit`
    - `npm run build` → Production build smoke test
 
-Once those steps are complete, CookSnap Alpha v0.6 is fully operational locally.
+Once those steps are complete, CookSnap Beta v1.3 is fully operational locally.
 
 ### Optional: large recipe dataset (cleaned)
 - Use the MIT-licensed Open Recipes CSV: place it at `data/open-recipes/full_dataset.csv`.
@@ -62,16 +62,16 @@ Once those steps are complete, CookSnap Alpha v0.6 is fully operational locally.
 CookSnap will prefer the JSON cache when present; otherwise it falls back to `data/recipes.json`. The large artifacts are gitignored—do not commit them.
 
 ### Required asset for barcode fallback
-- Download ZXing WASM to your static assets so the fallback works offline/CSP-safe:
+  - Download ZXing WASM to your static assets so the fallback works offline/CSP-safe:
   ```bash
-  curl -o public/zxing_reader.v3.wasm https://cdn.jsdelivr.net/npm/zxing-wasm@2.2.2/dist/reader/zxing_reader.wasm
+  curl -o public/zxing_reader.v5.wasm https://cdn.jsdelivr.net/npm/zxing-wasm@2.2.2/dist/reader/zxing_reader.wasm
   ```
-  The barcode scanner now loads this self-hosted file by default (versioned filename to avoid stale caches).
+  The barcode scanner now loads this self-hosted file by default (versioned filename to avoid stale caches) via `/zxing-wasm?v=8`, served without gzip.
 
-## Implemented Features (Beta v1.1)
+## Implemented Features (Beta v1.3)
 - **Supabase-authenticated households**: Users sign in via Google OAuth, and the API auto-creates a household + membership with safe RLS defaults (now resilient to RLS-returning errors thanks to UUID pre-generation).
 - **Three add flows**:
-  - *Barcode scanning* powered by the native `BarcodeDetector` API with self-hosted ZXing WASM fallback for older browsers (`public/zxing_reader.v3.wasm`), plus Open Food Facts lookups and UPC caching.
+  - *Barcode scanning* powered by the native `BarcodeDetector` API with self-hosted ZXing WASM fallback for older browsers (`public/zxing_reader.v5.wasm`), plus Open Food Facts lookups and UPC caching.
   - *Receipt OCR* (placeholder UI referencing Tesseract.js pipeline).
   - *Manual entry* (fully working form hitting `/api/items`).
 - **Pantry dashboard + revamped pantry view**:
@@ -155,4 +155,4 @@ biome.json          Lint/format rules
 README.md           You are here
 ```
 
-CookSnap Alpha v0.6 is stable enough for local demos; future milestones will layer in collaboration, analytics, and the enhanced automation features listed above. Contributions and issue reports are welcome—open a PR or drop feedback in the repo.
+CookSnap Beta v1.3 is stable enough for local demos; future milestones will layer in collaboration, analytics, and the enhanced automation features listed above. Contributions and issue reports are welcome—open a PR or drop feedback in the repo.

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { AddManual } from "@/components/AddManual";
 import { BarcodeAdd } from "@/components/BarcodeAdd";
 import { ReceiptAdd } from "@/components/ReceiptAdd";
@@ -12,7 +12,26 @@ interface AddTabsClientProps {
   storageLocations: StorageLocation[];
 }
 
+const RELEASE_LABEL = "CookSnap · Beta v1.3";
+
 export function AddTabsClient({ storageLocations }: AddTabsClientProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  const loadingContent = (
+    <div className="space-y-2">
+      <Button disabled className="w-full">
+        Loading add tools…
+      </Button>
+      <p className="text-center text-xs text-[rgb(var(--muted-foreground))]">{RELEASE_LABEL}</p>
+    </div>
+  );
+
+  if (!mounted) {
+    return loadingContent;
+  }
+
   return (
     <Tabs defaultValue="barcode" className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--accent))]/15 p-6">
       <TabsList>
@@ -21,7 +40,7 @@ export function AddTabsClient({ storageLocations }: AddTabsClientProps) {
         <TabsTrigger value="manual">Manual</TabsTrigger>
       </TabsList>
       <TabsContent value="barcode">
-        <Suspense fallback={<Button disabled>Loading scanner…</Button>}>
+        <Suspense fallback={loadingContent}>
           <BarcodeAdd />
         </Suspense>
       </TabsContent>

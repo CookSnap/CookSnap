@@ -55,12 +55,18 @@ export async function createSupabaseRouteClient(): Promise<SupabaseClient<Databa
 
 export async function requireUserId(client?: SupabaseClient<Database>): Promise<string> {
   const supabase = client ?? (await createSupabaseServerClient());
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (error) throw error;
-  if (!user) redirect("/login");
-  return user.id;
+    if (!user) {
+      redirect("/");
+    }
+
+    return user.id;
+  } catch (error) {
+    console.error("Auth check failed, redirecting to home", error);
+    redirect("/");
+  }
 }
