@@ -10,8 +10,8 @@ const WASM_PATH = path.join(process.cwd(), "public", WASM_FILENAME);
 export async function GET() {
   try {
     const stat = await fs.promises.stat(WASM_PATH);
-    const stream = fs.createReadStream(WASM_PATH);
-    return new NextResponse(stream as fs.ReadStream, {
+    const data = await fs.promises.readFile(WASM_PATH);
+    return new NextResponse(data, {
       status: 200,
       headers: {
         "Content-Type": "application/wasm",

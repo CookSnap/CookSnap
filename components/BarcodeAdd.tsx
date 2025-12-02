@@ -41,6 +41,7 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const zxingReadyRef = useRef<Promise<void> | null>(null);
   const zxingUrlRef = useRef<string | null>(null);
+  const zxingSourceRef = useRef<string | null>(null);
   const zxingFailedRef = useRef(false);
   const detectionFrameCountRef = useRef(0);
 
@@ -151,15 +152,17 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
               console.warn(`WASM response had content-encoding=${contentEncoding}, proceeding because magic bytes matched`);
             }
 
+            const blobUrl = URL.createObjectURL(new Blob([buffer], { type: "application/wasm" }));
+
             await prepareZXingModule({
               overrides: {
-                locateFile: () => candidate,
+                locateFile: () => blobUrl,
               },
-              wasmBinary: buffer,
               fireImmediately: true,
             });
 
-            zxingUrlRef.current = candidate;
+            zxingUrlRef.current = blobUrl;
+            zxingSourceRef.current = candidate;
             return;
           } catch (error) {
             lastError = error instanceof Error ? error : new Error("Unable to load scanner fallback");
@@ -175,9 +178,9 @@ export function BarcodeAdd({ defaultStorageId = null, defaultStorageCategory = n
         .then(() => undefined)
         .catch((error) => {
           zxingFailedRef.current = true;
-          const message =
-            error instanceof Error ? error.message : "Unable to load scanner fallback";
-          setCameraError(`${message}${zxingUrlRef.current ? ` (${zxingUrlRef.current})` : ""}`);
+          const message = error instanceof Error ? error.message : "Unable to load scanner fallback";
+          const source = zxingSourceRef.current ?? zxingUrlRef.current ?? "unknown source";
+          setCameraError(`${message} (${source})`);
           throw error;
         });
     }
